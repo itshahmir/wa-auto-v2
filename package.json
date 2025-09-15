@@ -1,0 +1,48 @@
+{
+  "name": "custom-wa-automation",
+  "version": "1.0.0",
+  "description": "WhatsApp Web automation with persistent sessions",
+  "main": "whatsapp-automation.js",
+  "scripts": {
+    "start": "node index.js",
+    "api": "node index.js --api",
+    "api:dev": "nodemon index.js --api",
+    "ui": "node server-ui.js",
+    "ui:dev": "nodemon server-ui.js",
+    "test": "node test-v2-complete.js",
+    "orchestrator": "node examples/orchestrator.js",
+    "users:list": "node examples/users/list-users.js",
+    "users:create": "node examples/users/create-user.js",
+    "login:qr": "node examples/login/qr-login.js",
+    "login:code": "node examples/login/code-login.js",
+    "stats": "node examples/stats.js",
+    "demo": "node examples/demo-multiuser.js"
+  },
+  "dependencies": {
+    "@wppconnect/wa-js": "^3.18.4",
+    "@wppconnect/wa-version": "^1.5.2104",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "file-type": "~16.5.4",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "playwright": "^1.55.0",
+    "playwright-chromium": "^1.52.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "whatsapp",
+    "automation",
+    "playwright",
+    "web-scraping"
+  ],
+  "author": "",
+  "license": "ISC"
+}

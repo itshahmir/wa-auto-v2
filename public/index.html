@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Automation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(240 3.7% 15.9%)",
+                        input: "hsl(240 3.7% 15.9%)",
+                        ring: "hsl(240 4.9% 83.9%)",
+                        background: "hsl(240 10% 3.9%)",
+                        foreground: "hsl(0 0% 98%)",
+                        primary: {
+                            DEFAULT: "hsl(0 0% 98%)",
+                            foreground: "hsl(240 5.9% 10%)",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(240 3.7% 15.9%)",
+                            foreground: "hsl(0 0% 98%)",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(0 62.8% 30.6%)",
+                            foreground: "hsl(0 0% 98%)",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(240 3.7% 15.9%)",
+                            foreground: "hsl(240 5% 64.9%)",
+                        },
+                        accent: {
+                            DEFAULT: "hsl(240 3.7% 15.9%)",
+                            foreground: "hsl(0 0% 98%)",
+                        },
+                        card: {
+                            DEFAULT: "hsl(240 10% 3.9%)",
+                            foreground: "hsl(0 0% 98%)",
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+        .toast {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Button loading state */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-right-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: inherit;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: hsl(240 3.7% 15.9%);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: hsl(240 5% 34%);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: hsl(240 5% 44%);
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-border">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold">WhatsApp Automation</h1>
+                <div class="flex items-center gap-4">
+                    <span id="serverStatus" class="text-sm text-muted-foreground flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Connected
+                    </span>
+                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Sessions Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Sessions</h2>
+                        <button id="newSessionBtn" class="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors">
+                            New Session
+                        </button>
+                    </div>
+                    <div id="sessionsList" class="space-y-2">
+                        <!-- Sessions will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2">
+                <!-- Welcome State -->
+                <div id="welcomeState" class="bg-card rounded-lg border border-border p-12 text-center">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    <h3 class="text-xl font-semibold mb-2">Welcome to WhatsApp Automation</h3>
+                    <p class="text-muted-foreground mb-4">Create a new session to get started</p>
+                    <button onclick="document.getElementById('newSessionBtn').click()" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                        Create First Session
+                    </button>
+                </div>
+
+                <!-- Session Details (Hidden by default) -->
+                <div id="sessionDetails" class="hidden">
+                    <div class="bg-card rounded-lg border border-border p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold">Session Details</h2>
+                            <span id="sessionStatus" class="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground"></span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Session ID:</span>
+                                <span id="sessionId" class="font-mono text-xs"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">User ID:</span>
+                                <span id="userId"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Phone Number:</span>
+                                <span id="phoneNumber" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Created:</span>
+                                <span id="createdAt"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Re-authenticate button for sessions needing auth -->
+                    <div id="reAuthSection" class="hidden bg-card rounded-lg border border-border p-6 mb-6">
+                        <div class="text-center">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold mb-2">Authentication Required</h3>
+                            <p class="text-muted-foreground mb-4">This session needs to be authenticated to continue</p>
+                            <button id="reAuthBtn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                                Authenticate with QR Code
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Controls -->
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <!-- Main Status Tabs -->
+                        <div class="flex gap-4 mb-6 border-b border-border">
+                            <button class="main-status-tab px-3 py-2 text-sm font-medium transition-colors border-b-2 border-primary" data-action="post">
+                                Post Status
+                            </button>
+                            <button class="main-status-tab px-3 py-2 text-sm font-medium transition-colors border-b-2 border-transparent hover:border-muted" data-action="view">
+                                View My Status
+                            </button>
+                        </div>
+
+                        <!-- Post Status Section -->
+                        <div id="postStatusSection">
+                            <h3 class="text-lg font-semibold mb-4">Post Status</h3>
+
+                            <!-- Status Type Tabs -->
+                            <div class="flex gap-2 mb-4">
+                                <button class="status-tab px-3 py-1.5 rounded-md text-sm transition-colors bg-secondary text-secondary-foreground" data-type="text">
+                                    Text
+                                </button>
+                                <button class="status-tab px-3 py-1.5 rounded-md text-sm transition-colors" data-type="image">
+                                    Image
+                                </button>
+                                <button class="status-tab px-3 py-1.5 rounded-md text-sm transition-colors" data-type="video">
+                                    Video
+                                </button>
+                            </div>
+
+                        <!-- Text Status Form -->
+                        <div id="textStatusForm" class="status-form">
+                            <textarea
+                                id="statusText"
+                                placeholder="What's on your mind?"
+                                class="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                                rows="4"
+                            ></textarea>
+
+                            <!-- Advanced Options -->
+                            <div class="mt-3 space-y-3">
+                                <!-- Font Style -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Font Style</label>
+                                    <select id="textFont" class="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                                        <option value="0">Sans Serif (Default)</option>
+                                        <option value="1">Serif</option>
+                                        <option value="2">Norican Regular (Cursive)</option>
+                                        <option value="3">Bryndan Write (Handwriting)</option>
+                                        <option value="4">BebasNeue Regular (Bold)</option>
+                                        <option value="5">Oswald Heavy (Bold Condensed)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Background Color -->
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium mb-1">Background Color</label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="color"
+                                                id="textBgColor"
+                                                value="#075E54"
+                                                class="w-12 h-10 border border-border rounded cursor-pointer"
+                                            >
+                                            <input
+                                                type="text"
+                                                id="textBgColorHex"
+                                                value="#075E54"
+                                                placeholder="#000000"
+                                                class="flex-1 px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring font-mono text-sm"
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <!-- Preset Colors -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Presets</label>
+                                        <div class="flex gap-1">
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #075E54" data-color="#075E54" title="WhatsApp Green"></button>
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #000000" data-color="#000000" title="Black"></button>
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #FF0000" data-color="#FF0000" title="Red"></button>
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #0000FF" data-color="#0000FF" title="Blue"></button>
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #FFA500" data-color="#FFA500" title="Orange"></button>
+                                            <button class="color-preset w-8 h-8 rounded" style="background-color: #800080" data-color="#800080" title="Purple"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button id="sendTextStatus" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors relative">
+                                    <span class="btn-text">Post Status</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Image Status Form -->
+                        <div id="imageStatusForm" class="status-form hidden">
+                            <input
+                                type="file"
+                                id="statusImage"
+                                accept="image/*"
+                                class="hidden"
+                            >
+                            <label for="statusImage" class="block w-full px-4 py-8 bg-background border-2 border-dashed border-border rounded-md text-center cursor-pointer hover:border-muted-foreground transition-colors">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <span class="text-muted-foreground">Click to upload image</span>
+                                <div class="text-xs text-muted-foreground mt-1">Supported: JPG, PNG, GIF</div>
+                            </label>
+
+                            <!-- Image Preview -->
+                            <div id="imagePreview" class="hidden mt-3">
+                                <div class="relative inline-block">
+                                    <img id="imagePreviewImg" class="max-h-48 rounded-lg" alt="Preview">
+                                    <button id="removeImage" class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea
+                                id="imageCaption"
+                                placeholder="Add a caption (optional)"
+                                class="w-full mt-3 px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                                rows="2"
+                                maxlength="700"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground text-right">
+                                <span id="imageCaptionCount">0</span>/700 characters
+                            </div>
+
+                            <button id="sendImageStatus" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors relative">
+                                <span class="btn-text">Post Image Status</span>
+                            </button>
+                        </div>
+
+                        <!-- Video Status Form -->
+                        <div id="videoStatusForm" class="status-form hidden">
+                            <input
+                                type="file"
+                                id="statusVideo"
+                                accept="video/*"
+                                class="hidden"
+                            >
+                            <label for="statusVideo" class="block w-full px-4 py-8 bg-background border-2 border-dashed border-border rounded-md text-center cursor-pointer hover:border-muted-foreground transition-colors">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-muted-foreground">Click to upload video</span>
+                                <div class="text-xs text-muted-foreground mt-1">Supported: MP4, AVI, MOV (Max 30 seconds)</div>
+                            </label>
+
+                            <!-- Video Preview -->
+                            <div id="videoPreview" class="hidden mt-3">
+                                <div class="relative inline-block">
+                                    <video id="videoPreviewPlayer" class="max-h-48 rounded-lg" controls></video>
+                                    <button id="removeVideo" class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="text-xs text-muted-foreground mt-2">
+                                    Duration: <span id="videoDuration">--</span> seconds
+                                </div>
+                            </div>
+
+                            <textarea
+                                id="videoCaption"
+                                placeholder="Add a caption (optional)"
+                                class="w-full mt-3 px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                                rows="2"
+                                maxlength="700"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground text-right">
+                                <span id="videoCaptionCount">0</span>/700 characters
+                            </div>
+
+                            <button id="sendVideoStatus" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors relative">
+                                <span class="btn-text">Post Video Status</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- View Status Section -->
+                    <div id="viewStatusSection" class="hidden">
+                        <h3 class="text-lg font-semibold mb-4">My Status</h3>
+
+                        <div id="statusLoadingState" class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <p class="text-muted-foreground mt-2">Loading status...</p>
+                        </div>
+
+                        <div id="statusContent" class="hidden">
+                            <!-- Status items will be populated here -->
+                        </div>
+
+                        <div id="noStatusMessage" class="hidden text-center py-8 text-muted-foreground">
+                            <svg class="w-12 h-12 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <p>No status updates yet</p>
+                            <p class="text-sm mt-1">Post your first status to see it here</p>
+                        </div>
+
+                        <button id="refreshStatusBtn" class="mt-4 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors relative">
+                            <span class="btn-text">Refresh Status</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Session Modal -->
+    <div id="createSessionModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-slide-down">
+            <h2 class="text-xl font-semibold mb-4">Create New Session</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">User ID</label>
+                    <input
+                        type="text"
+                        id="newUserId"
+                        placeholder="e.g., user123"
+                        class="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Authentication Method</label>
+                    <div class="flex gap-2">
+                        <button class="auth-method flex-1 px-3 py-2 rounded-md border border-border transition-colors bg-secondary text-secondary-foreground" data-method="qr">
+                            QR Code
+                        </button>
+                        <button class="auth-method flex-1 px-3 py-2 rounded-md border border-border transition-colors" data-method="code">
+                            Pairing Code
+                        </button>
+                    </div>
+                </div>
+
+                <div id="phoneNumberField" class="hidden">
+                    <label class="block text-sm font-medium mb-1">Phone Number</label>
+                    <input
+                        type="tel"
+                        id="phoneNumberInput"
+                        placeholder="+1234567890"
+                        class="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-6">
+                <button id="createSessionConfirm" class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors relative">
+                    <span class="btn-text">Create</span>
+                </button>
+                <button id="createSessionCancel" class="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-slide-down">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Scan QR Code</h2>
+                <button id="refreshQrBtn" class="p-2 text-muted-foreground hover:text-foreground transition-colors" title="Refresh QR Code">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="qrContainer" class="bg-white p-4 rounded-lg flex items-center justify-center min-h-[280px] cursor-pointer relative group">
+                <!-- QR code will be displayed here dynamically -->
+                <div id="qrcode"></div>
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                    <span class="opacity-0 group-hover:opacity-100 text-gray-600 text-sm">Click to refresh</span>
+                </div>
+            </div>
+            <p class="text-sm text-muted-foreground mt-4 text-center">
+                Open WhatsApp on your phone and scan this QR code
+            </p>
+            <div class="text-xs text-muted-foreground mt-2 text-center">
+                QR code refreshes automatically every 2 seconds
+            </div>
+            <button id="closeQrModal" class="w-full mt-4 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Pairing Code Modal -->
+    <div id="pairingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-slide-down">
+            <h2 class="text-xl font-semibold mb-4">Enter Pairing Code</h2>
+            <div class="bg-secondary rounded-lg p-6 text-center">
+                <div id="pairingCode" class="text-3xl font-mono font-bold tracking-wider"></div>
+            </div>
+            <div class="text-sm text-muted-foreground mt-4 space-y-2">
+                <p>1. Open WhatsApp on your phone</p>
+                <p>2. Go to Settings → Linked Devices</p>
+                <p>3. Tap "Link a Device" → "Link with phone number"</p>
+                <p>4. Enter the code above</p>
+            </div>
+            <button id="closePairingModal" class="w-full mt-4 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Global Loading Indicator -->
+    <div id="globalLoader" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-card border border-border rounded-lg px-4 py-2 shadow-lg z-50">
+        <div class="flex items-center gap-3">
+            <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-r-transparent"></div>
+            <span class="text-sm" id="globalLoaderText">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api-client.js"></script>
+    <script src="js/app.js"></script>
+    
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "sessions": [],
+  "users": [],
+  "messages": [],
+  "_metadata": {
+    "version": "1.1.0",
+    "createdAt": "2025-09-14T23:00:00.000Z",
+    "lastMigration": "2025-09-14T23:00:00.000Z"
+  }
+}
