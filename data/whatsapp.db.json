@@ -399,11 +399,12 @@
       "userId": "55",
       "phoneNumber": null,
       "createdAt": "2025-09-16T21:11:48.319Z",
-      "status": "active",
+      "status": "terminated",
       "lastActivity": "2025-09-16T21:12:38.747Z",
       "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/cb3ce131-db8e-4502-b218-1e15161ae931",
       "proxyId": null,
-      "proxyInfo": null
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-16T21:18:33.841Z"
     }
   ],
   "users": [
@@ -561,6 +562,142 @@
     "createdAt": "2025-09-14T23:00:00.000Z",
     "lastMigration": "2025-09-14T23:00:00.000Z"
   },
-  "proxies": [],
+  "proxies": [
+    {
+      "host": "brd.superproxy.io",
+      "port": 33335,
+      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.7.22",
+      "password": "ub81zf14rl7k",
+      "protocol": "http",
+      "tags": [],
+      "status": "healthy",
+      "health": {
+        "lastChecked": null,
+        "responseTime": null,
+        "failureCount": 0,
+        "lastError": null
+      },
+      "usage": {
+        "totalAssignments": 0,
+        "currentAssignments": 0,
+        "lastUsed": null
+      },
+      "createdAt": "2025-09-16T21:17:52.973Z",
+      "updatedAt": "2025-09-16T21:18:42.012Z",
+      "id": "mfn20zwt5s27rglt94h",
+      "health.lastChecked": "2025-09-16T21:18:42.012Z",
+      "health.responseTime": 1027,
+      "health.failureCount": 0,
+      "health.lastError": null
+    },
+    {
+      "host": "brd.superproxy.io",
+      "port": 33335,
+      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-168.158.95.66",
+      "password": "ub81zf14rl7k",
+      "protocol": "http",
+      "tags": [],
+      "status": "healthy",
+      "health": {
+        "lastChecked": null,
+        "responseTime": null,
+        "failureCount": 0,
+        "lastError": null
+      },
+      "usage": {
+        "totalAssignments": 0,
+        "currentAssignments": 0,
+        "lastUsed": null
+      },
+      "createdAt": "2025-09-16T21:17:52.981Z",
+      "updatedAt": "2025-09-16T21:18:41.415Z",
+      "id": "mfn20zx1frg3jz55q8u",
+      "health.lastChecked": "2025-09-16T21:18:41.415Z",
+      "health.responseTime": 430,
+      "health.failureCount": 0,
+      "health.lastError": null
+    },
+    {
+      "host": "brd.superproxy.io",
+      "port": 33335,
+      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.84.60",
+      "password": "ub81zf14rl7k",
+      "protocol": "http",
+      "tags": [],
+      "status": "healthy",
+      "health": {
+        "lastChecked": null,
+        "responseTime": null,
+        "failureCount": 0,
+        "lastError": null
+      },
+      "usage": {
+        "totalAssignments": 0,
+        "currentAssignments": 0,
+        "lastUsed": null
+      },
+      "createdAt": "2025-09-16T21:17:52.982Z",
+      "updatedAt": "2025-09-16T21:18:43.825Z",
+      "id": "mfn20zx2sv5oa5jxiik",
+      "health.lastChecked": "2025-09-16T21:18:43.825Z",
+      "health.responseTime": 2839,
+      "health.failureCount": 0,
+      "health.lastError": null
+    },
+    {
+      "host": "brd.superproxy.io",
+      "port": 33335,
+      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-213.109.191.153",
+      "password": "ub81zf14rl7k",
+      "protocol": "http",
+      "tags": [],
+      "status": "healthy",
+      "health": {
+        "lastChecked": null,
+        "responseTime": null,
+        "failureCount": 0,
+        "lastError": null
+      },
+      "usage": {
+        "totalAssignments": 0,
+        "currentAssignments": 0,
+        "lastUsed": null
+      },
+      "createdAt": "2025-09-16T21:17:52.983Z",
+      "updatedAt": "2025-09-16T21:18:42.449Z",
+      "id": "mfn20zx3p5fipfm4ea",
+      "health.lastChecked": "2025-09-16T21:18:42.449Z",
+      "health.responseTime": 1464,
+      "health.failureCount": 0,
+      "health.lastError": null
+    },
+    {
+      "host": "brd.superproxy.io",
+      "port": 33335,
+      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-66.17.239.26",
+      "password": "ub81zf14rl7k",
+      "protocol": "http",
+      "tags": [],
+      "status": "healthy",
+      "health": {
+        "lastChecked": null,
+        "responseTime": null,
+        "failureCount": 0,
+        "lastError": null
+      },
+      "usage": {
+        "totalAssignments": 0,
+        "currentAssignments": 0,
+        "lastUsed": null
+      },
+      "createdAt": "2025-09-16T21:17:52.984Z",
+      "updatedAt": "2025-09-16T21:18:43.931Z",
+      "id": "mfn20zx4j4wr6xhmgpb",
+      "health.lastChecked": "2025-09-16T21:18:43.931Z",
+      "health.responseTime": 2946,
+      "health.failureCount": 0,
+      "health.lastError": null
+    }
+  ],
   "proxyAssignments": []
 }
