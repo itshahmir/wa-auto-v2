@@ -132,7 +132,7 @@ class SessionManager {
         // Close browser but keep session data for future use
         const automation = this.sessions.get(sessionId);
         if (automation) {
-            await automation.cleanup();
+            await automation.cleanup(true); // Force close browser
             this.sessions.delete(sessionId);
         }
 
@@ -154,7 +154,7 @@ class SessionManager {
     async removeSession(sessionId) {
         const automation = this.sessions.get(sessionId);
         if (automation) {
-            await automation.cleanup();
+            await automation.cleanup(true); // Force close browser during removal
             this.sessions.delete(sessionId);
         }
 
@@ -179,8 +179,30 @@ class SessionManager {
 
         for (const [sessionId, metadata] of this.sessionMetadata.entries()) {
             const inactiveMinutes = (now - metadata.lastActivity) / 1000 / 60;
+
+            // Only remove sessions that are inactive AND not authenticated
             if (inactiveMinutes > maxInactiveMinutes) {
-                toRemove.push(sessionId);
+                const automation = this.sessions.get(sessionId);
+                let shouldRemove = true;
+
+                if (automation) {
+                    try {
+                        // Check if session is authenticated before removing
+                        const isAuthenticated = await automation.isAuthenticated();
+                        if (isAuthenticated) {
+                            console.log(`[${sessionId}] Skipping cleanup - session is authenticated despite inactivity`);
+                            shouldRemove = false;
+                            // Update last activity to prevent repeated checks
+                            metadata.lastActivity = now;
+                        }
+                    } catch (error) {
+                        console.log(`[${sessionId}] Error checking auth status during cleanup, will remove:`, error.message);
+                    }
+                }
+
+                if (shouldRemove) {
+                    toRemove.push(sessionId);
+                }
             }
         }
 
@@ -378,6 +400,19 @@ class SessionManager {
         if (!forceClose && authStatuses.includes(metadata.status)) {
             console.log(`[${sessionId}] Keeping browser open - awaiting authentication`);
             return false;
+        }
+
+        // Don't close if session is authenticated (unless forced)
+        if (!forceClose) {
+            try {
+                const isAuthenticated = await automation.isAuthenticated();
+                if (isAuthenticated) {
+                    console.log(`[${sessionId}] Keeping browser open - session is authenticated`);
+                    return false;
+                }
+            } catch (error) {
+                console.log(`[${sessionId}] Error checking auth status, proceeding with browser close:`, error.message);
+            }
         }
 
         // Close the browser gracefully

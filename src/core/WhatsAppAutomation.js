@@ -99,7 +99,7 @@ class WhatsAppAutomation {
                 });
 
                 // Inject WA-JS using addScriptTag
-                const waJsPath = path.resolve("E:/Projects/Fiverr/Elyua/custom-wa-automation/wa-automation-v2/wa-js/dist/wppconnect-wa.js");
+                const waJsPath = path.resolve("/home/ec2-user/wa-auto-v2/wa-js/dist/wppconnect-wa.js");
 
                 await page.addScriptTag({
                     origin: "https://web.whatsapp.com/",
@@ -608,11 +608,19 @@ class WhatsAppAutomation {
         } catch (error) {
             console.error(`[${this.sessionId}] ❌ Authentication timeout after 90 seconds:`, error.message);
 
-            // Terminate the session after timeout
+            // Handle authentication timeout
             try {
-                console.log(`[${this.sessionId}] 🔴 Terminating session due to authentication timeout...`);
+                console.log(`[${this.sessionId}] 🔴 Authentication timeout after 90 seconds...`);
 
-                // Close the browser
+                // Check if authentication succeeded during timeout handling
+                const finalAuthCheck = await this.isAuthenticated();
+                if (finalAuthCheck) {
+                    console.log(`[${this.sessionId}] ✅ Authentication detected during timeout handling - keeping session alive`);
+                    return true;
+                }
+
+                // Only close browser if authentication truly failed
+                console.log(`[${this.sessionId}] 🔴 Terminating session due to authentication timeout...`);
                 if (this.browser) {
                     await this.browser.close();
                     this.browser = null;
@@ -702,12 +710,32 @@ class WhatsAppAutomation {
         }
     }
 
-    async cleanup() {
+    async cleanup(forceClose = false) {
+        // Detach CDP session
         if (this.cdpSession) {
             await this.cdpSession.detach();
         }
-        if (this.browser) {
+
+        // Only close browser if forced or if not authenticated
+        if (this.browser && forceClose) {
+            console.log(`[${this.sessionId}] Force closing browser during cleanup`);
             await this.browser.close();
+        } else if (this.browser && !forceClose) {
+            try {
+                // Check authentication status before closing
+                const isAuthenticated = await this.isAuthenticated();
+                if (!isAuthenticated) {
+                    console.log(`[${this.sessionId}] Closing browser - session not authenticated`);
+                    await this.browser.close();
+                } else {
+                    console.log(`[${this.sessionId}] Keeping browser alive - session is authenticated`);
+                    // Keep browser alive for authenticated sessions
+                    return;
+                }
+            } catch (error) {
+                console.log(`[${this.sessionId}] Error checking auth status during cleanup, closing browser:`, error.message);
+                await this.browser.close();
+            }
         }
     }
 }

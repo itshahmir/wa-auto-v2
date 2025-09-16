@@ -375,13 +375,25 @@ class WhatsAppAPI {
                     // This keeps the browser alive while waiting for authentication
                     automation.handleLogin(authMethod, phoneNumber).then(async (loginSuccess) => {
                         if (loginSuccess) {
-                            automation.statusHandler = new WhatsAppStatusHandler(automation.page, automation);
-                            this.sessionManager.updateSessionStatus(sessionId, 'ready');
-                            console.log(`[${sessionId}] Authentication successful, session ready`);
+                            console.log(`[${sessionId}] Authentication successful, waiting for WPP.isFullReady...`);
 
-                            // Close browser after successful authentication but keep session data
-                            console.log(`[${sessionId}] Closing browser after successful authentication`);
-                            await this.sessionManager.closeBrowserOnly(sessionId);
+                            // Wait for WPP to be fully ready before marking session as ready
+                            try {
+                                await automation.page.waitForFunction(() => {
+                                    return typeof window.WPP !== 'undefined' && window.WPP.isFullReady;
+                                }, { timeout: 30000 });
+
+                                automation.statusHandler = new WhatsAppStatusHandler(automation.page, automation);
+                                this.sessionManager.updateSessionStatus(sessionId, 'ready');
+                                console.log(`[${sessionId}] Session fully ready with WPP.isFullReady confirmed`);
+
+                                // Keep browser alive for status operations
+                                console.log(`[${sessionId}] Keeping browser alive for status operations`);
+                            } catch (error) {
+                                console.error(`[${sessionId}] WPP.isFullReady timeout:`, error.message);
+                                this.sessionManager.updateSessionStatus(sessionId, 'failed');
+                                await this.sessionManager.removeSession(sessionId);
+                            }
                         } else {
                             this.sessionManager.updateSessionStatus(sessionId, 'failed');
                             console.log(`[${sessionId}] Authentication failed, cleaning up session`);

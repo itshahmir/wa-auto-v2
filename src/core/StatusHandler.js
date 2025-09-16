@@ -15,14 +15,19 @@ class WhatsAppStatusHandler {
 
             console.log('WA-JS is fully ready...');
 
+            console.log('Waiting for refreshed Status button...');
+
+            
             // await this.page.waitForTimeout(1000); // Wait for UI to load
-            console.log('Waiting for Status button...');
-            const statusButton = this.page.locator('[aria-label="Status"]').first();
+            const statusButton = this.page.locator(
+                'button[aria-label="Status"] [data-icon="status-refreshed"], ' +
+                'button[aria-label="Updates in Status"] [data-icon="status-refreshed"]'
+            ).first();
 
             // Wait until visible (max 10s)
             await statusButton.waitFor({ state: 'visible', timeout: 10000 });
 
-            console.log('Clicking Status button...');
+            console.log('Clicking refreshed Status button...');
             await statusButton.click();
 
             // Send text status using WA-JS

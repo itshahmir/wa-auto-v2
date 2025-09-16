@@ -151,10 +151,80 @@
       "userId": "user_1757976628165",
       "phoneNumber": null,
       "createdAt": "2025-09-15T22:50:31.209Z",
-      "status": "active",
-      "lastActivity": "2025-09-15T23:38:49.347Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-15T23:53:40.445Z",
       "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\050c0b9d-126c-4424-841d-b60c2c69b7ae",
       "browserClosed": true,
+      "authData": {
+        "type": "qr",
+        "qr": "2@OOnWeE3hrBM+KU1hUSv6iHynmNbJFbzQ7EvsMSnE2BVfM4NdXbd15OTxTc3r7yHCKUEXouzvWKgd5niEWKwlIEh9HWFQeqZwkXU=,RSa5I6qRg6YN/ER1zwg/FABoB8+zAFP3QpHIE4JhBQU=,HPQbvRZQ+VMBh/Zuhfig6UNuc/OmftBHWXBj8MPfYTg=,OBEBNOjNnt5DR45UXYUM5KEMIS/dyEZuMb4YHMgKzPM="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-15T23:56:09.558Z"
+    },
+    {
+      "id": "b5e04fcc-ac90-4818-865d-1bfdbad3f535",
+      "userId": "user_1757980001691",
+      "phoneNumber": null,
+      "createdAt": "2025-09-15T23:46:45.314Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-15T23:59:15.571Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/b5e04fcc-ac90-4818-865d-1bfdbad3f535",
+      "browserClosed": true,
+      "authData": {
+        "type": "qr",
+        "qr": "2@dLUmnM8q6YPUSAXcKdaRXe3xvugsnDeJLyZOjwwiPbythwy+LQ2fFSo+O0F0I6dL6Fp9QwJf+rhYE4Tf7SY5NO83yFM0gsBzENE=,aBwwH6T2PhFRyTOvotRno9M4a3cPOBr4UcZKVbRRc3c=,YabgDak7s9MvLG/2Ioec2TQRi9TRfYSuP8Ty5YtMOi0=,KZPMvJWPQpImZSKIh6vBo8PDlBXHKmavxmvuCJHJJ+8="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-15T23:59:34.760Z"
+    },
+    {
+      "id": "8118ad84-68c4-487f-ba91-dc22b5025f74",
+      "userId": "user_1757980573619",
+      "phoneNumber": null,
+      "createdAt": "2025-09-15T23:56:16.524Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T00:03:06.367Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/8118ad84-68c4-487f-ba91-dc22b5025f74",
+      "browserClosed": true,
+      "authData": {
+        "type": "qr",
+        "qr": "2@FgLghrhOwGdTN1ZQUs2uqaCeqyDMuHGwfFSDX7uE5z++U09WdHEL3AYrqB9EQ062XA/2DikLsyJWxn44XWoSOdNlPW8aBr3ojR0=,Tpg+bBhUqDBsvPvXJKlBb+z7zDAIc87WM9Z5FeUFqGA=,uT+mUSUrbiiwgX5HAtDrkbYw62fV/9H+/pjSMRoaf0A=,vuuTsv3ak0Btpwx0DjMmKRmGThiqr+DG3TE9keLGZbc="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T00:04:39.539Z"
+    },
+    {
+      "id": "aabc8fce-2e94-4cf5-8b2a-08c89a2f90ed",
+      "userId": "user_1757980775523",
+      "phoneNumber": null,
+      "createdAt": "2025-09-15T23:59:45.737Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T00:06:08.500Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/aabc8fce-2e94-4cf5-8b2a-08c89a2f90ed",
+      "browserClosed": true,
+      "authData": null,
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T00:06:21.914Z"
+    },
+    {
+      "id": "acb688fd-9d07-44a1-98e0-0205aef8ee51",
+      "userId": "user_1757981085267",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T00:04:47.840Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T00:05:18.460Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/acb688fd-9d07-44a1-98e0-0205aef8ee51",
+      "terminatedAt": "2025-09-16T00:06:25.252Z"
+    },
+    {
+      "id": "eeefdcf3-6345-41e4-832e-50cdb402546f",
+      "userId": "shahmir",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T00:06:41.289Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T00:25:03.351Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/eeefdcf3-6345-41e4-832e-50cdb402546f",
       "authData": null,
       "authMethod": "qr"
     }
@@ -163,8 +233,8 @@
     {
       "userId": "shahmir",
       "createdAt": "2025-09-14T19:44:42.647Z",
-      "lastActivity": "2025-09-14T21:33:51.718Z",
-      "totalSessions": 8,
+      "lastActivity": "2025-09-16T00:25:03.352Z",
+      "totalSessions": 9,
       "id": "mfk3th1zidcjwrcw5ch"
     },
     {
@@ -212,9 +282,37 @@
     {
       "userId": "user_1757976628165",
       "createdAt": "2025-09-15T22:50:31.208Z",
-      "lastActivity": "2025-09-15T23:38:49.348Z",
+      "lastActivity": "2025-09-15T23:53:40.446Z",
       "totalSessions": 1,
       "id": "mflpwa08iophnldog2h"
+    },
+    {
+      "userId": "user_1757980001691",
+      "createdAt": "2025-09-15T23:46:45.103Z",
+      "lastActivity": "2025-09-15T23:59:15.571Z",
+      "totalSessions": 1,
+      "id": "mflrwlbj1i0nshfdybe"
+    },
+    {
+      "userId": "user_1757980573619",
+      "createdAt": "2025-09-15T23:56:16.329Z",
+      "lastActivity": "2025-09-16T00:03:06.367Z",
+      "totalSessions": 1,
+      "id": "mfls8u2xbluv5f8m7r"
+    },
+    {
+      "userId": "user_1757980775523",
+      "createdAt": "2025-09-15T23:59:45.536Z",
+      "lastActivity": "2025-09-16T00:06:08.500Z",
+      "totalSessions": 1,
+      "id": "mflsdbi8zk4kofqcsel"
+    },
+    {
+      "userId": "user_1757981085267",
+      "createdAt": "2025-09-16T00:04:47.642Z",
+      "lastActivity": "2025-09-16T00:05:18.461Z",
+      "totalSessions": 1,
+      "id": "mflsjsm2f2hos3rkxdi"
     }
   ],
   "messages": [],
