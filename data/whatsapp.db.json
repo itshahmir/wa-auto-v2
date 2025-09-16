@@ -222,9 +222,50 @@
       "userId": "shahmir",
       "phoneNumber": null,
       "createdAt": "2025-09-16T00:06:41.289Z",
-      "status": "active",
-      "lastActivity": "2025-09-16T00:25:03.351Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T01:39:14.433Z",
       "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/eeefdcf3-6345-41e4-832e-50cdb402546f",
+      "authData": null,
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T03:08:54.695Z"
+    },
+    {
+      "id": "5deb1124-c770-42d7-a8a0-93702a9d9159",
+      "userId": "shahmir_main",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T01:39:38.011Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T01:43:35.595Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/5deb1124-c770-42d7-a8a0-93702a9d9159",
+      "terminatedAt": "2025-09-16T03:08:54.845Z"
+    },
+    {
+      "id": "625f0de3-c5a2-47e1-bb49-62ff014cc76b",
+      "userId": "972546268012",
+      "phoneNumber": "972546268012",
+      "createdAt": "2025-09-16T05:08:05.491Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T05:10:05.840Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/625f0de3-c5a2-47e1-bb49-62ff014cc76b",
+      "terminatedAt": "2025-09-16T05:10:05.891Z"
+    },
+    {
+      "id": "190fd9a8-22b4-4d32-aa1b-adce272c0abd",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T05:12:17.952Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T09:22:14.836Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/190fd9a8-22b4-4d32-aa1b-adce272c0abd"
+    },
+    {
+      "id": "6570a78e-caba-474e-8a23-33a28feb88da",
+      "userId": "user_1758008651216",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T07:44:16.479Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T08:13:20.684Z",
+      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/6570a78e-caba-474e-8a23-33a28feb88da",
       "authData": null,
       "authMethod": "qr"
     }
@@ -233,7 +274,7 @@
     {
       "userId": "shahmir",
       "createdAt": "2025-09-14T19:44:42.647Z",
-      "lastActivity": "2025-09-16T00:25:03.352Z",
+      "lastActivity": "2025-09-16T01:39:14.433Z",
       "totalSessions": 9,
       "id": "mfk3th1zidcjwrcw5ch"
     },
@@ -313,6 +354,27 @@
       "lastActivity": "2025-09-16T00:05:18.461Z",
       "totalSessions": 1,
       "id": "mflsjsm2f2hos3rkxdi"
+    },
+    {
+      "userId": "shahmir_main",
+      "createdAt": "2025-09-16T01:39:38.011Z",
+      "lastActivity": "2025-09-16T01:43:35.595Z",
+      "totalSessions": 1,
+      "id": "mflvxrbvf7m9dgyebu7"
+    },
+    {
+      "userId": "972546268012",
+      "createdAt": "2025-09-16T05:08:05.491Z",
+      "lastActivity": "2025-09-16T09:22:14.836Z",
+      "totalSessions": 2,
+      "id": "mfm3du5v5p5zyhqhsb"
+    },
+    {
+      "userId": "user_1758008651216",
+      "createdAt": "2025-09-16T07:44:16.266Z",
+      "lastActivity": "2025-09-16T08:13:20.684Z",
+      "totalSessions": 1,
+      "id": "mfm8yop6quwv3sce7h8"
     }
   ],
   "messages": [],

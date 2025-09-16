@@ -40,23 +40,31 @@ class WhatsAppAutomation {
             console.log(`[${this.sessionId}] WARNING: Running in headless mode. WhatsApp may not work properly.`);
         }
 
+        // Prepare browser launch options
+        const launchOptions = {
+            headless: isHeadless || false, // Default to non-headless for WhatsApp compatibility
+            viewport: { width: 1920, height: 1080 },
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--window-size=1920,1080',
+                '--start-maximized',
+                '--default-encoding=utf-8',
+                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ]
+        };
+
+
         const browser = await playwright.chromium.launchPersistentContext(
             this.sessionPath,
             {
-                headless: isHeadless || false, // Default to non-headless for WhatsApp compatibility
-                viewport: { width: 1920, height: 1080 },
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--disable-gpu',
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                    '--window-size=1920,1080',
-                    '--start-maximized',
-                    '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                ]
+                ...launchOptions,
+                executablePath: '/usr/bin/google-chrome-stable'
             }
         );
 
@@ -111,14 +119,47 @@ class WhatsAppAutomation {
                 // Wait a bit for WA-JS to initialize
                 await new Promise(resolve => setTimeout(resolve, 3000));
 
+                // Remove WhatsApp sidebar to make it less heavy
+                try {
+                    await page.evaluate(() => {
+                        // Wait for sidebar to load and then remove it
+                        const waitForSidebar = setInterval(() => {
+                            const sideElement = document.querySelector('#side');
+                            if (sideElement && sideElement.parentElement) {
+                                console.log('Removing WhatsApp sidebar to reduce resource usage');
+                                sideElement.parentElement.remove();
+                                clearInterval(waitForSidebar);
+                            }
+                        }, 1000);
+
+                        // Stop trying after 30 seconds if sidebar not found
+                        setTimeout(() => {
+                            clearInterval(waitForSidebar);
+                        }, 30000);
+                    });
+                } catch (sidebarError) {
+                    console.log(`[${this.sessionId}] Could not remove sidebar:`, sidebarError.message);
+                }
+
             } catch (error) {
                 console.log(`[${this.sessionId}] WA-JS injection failed:`, error.message);
                 console.log(`[${this.sessionId}] Proceeding without WA-JS...`);
             }
         });
 
-        // Remove service workers and set up error handling
+        // Remove service workers and set up error handling with UTF-8 encoding
         await page.addInitScript(() => {
+            // Ensure UTF-8 encoding for Hebrew text support
+            const charset = document.createElement('meta');
+            charset.setAttribute('charset', 'UTF-8');
+            document.head.insertBefore(charset, document.head.firstChild);
+
+            // Also set http-equiv charset for better compatibility
+            const httpCharset = document.createElement('meta');
+            httpCharset.setAttribute('http-equiv', 'Content-Type');
+            httpCharset.setAttribute('content', 'text/html; charset=UTF-8');
+            document.head.insertBefore(httpCharset, document.head.firstChild);
+
             // Remove existent service worker
             navigator.serviceWorker
                 .getRegistrations()

@@ -29,7 +29,7 @@ class SessionManager {
         });
     }
 
-    createSession(userId, phoneNumber = null) {
+    async createSession(userId, phoneNumber = null) {
         const sessionId = uuidv4();
         const sessionPath = path.join(__dirname, 'sessions', sessionId);
 
@@ -153,6 +153,8 @@ class SessionManager {
 
     async removeSession(sessionId) {
         const automation = this.sessions.get(sessionId);
+        const metadata = this.sessionMetadata.get(sessionId);
+
         if (automation) {
             await automation.cleanup(true); // Force close browser during removal
             this.sessions.delete(sessionId);
@@ -239,6 +241,7 @@ class SessionManager {
         if (sessionData && sessionData.status !== 'terminated') {
             // Import WhatsAppAutomation class here
             const { WhatsAppAutomation } = require('./WhatsAppAutomation');
+
             const automation = new WhatsAppAutomation(sessionData.sessionPath, sessionId);
             this.sessions.set(sessionId, automation);
             this.sessionMetadata.set(sessionId, sessionData);
@@ -453,6 +456,7 @@ class SessionManager {
             memoryActiveSessions: this.sessions.size
         };
     }
+
 }
 
 module.exports = { SessionManager };

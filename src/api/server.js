@@ -12,7 +12,7 @@ class WhatsAppAPI {
     constructor(port = 3000) {
         this.app = express();
         this.port = port;
-        this.sessionManager = new SessionManager();
+        this.sessionManager = new SessionManager('./data/whatsapp.db.json');
         this.setupMiddleware();
         this.setupRoutes();
 
@@ -144,7 +144,7 @@ class WhatsAppAPI {
                     return res.status(400).json({ error: 'phoneNumber is required for pairing code authentication' });
                 }
 
-                const sessionId = this.sessionManager.createSession(userId, phoneNumber);
+                const sessionId = await this.sessionManager.createSession(userId, phoneNumber);
                 const automation = this.sessionManager.getSession(sessionId);
 
                 let qrCode = null;
@@ -1112,6 +1112,7 @@ class WhatsAppAPI {
                 res.status(500).json({ error: error.message });
             }
         });
+
     }
 
     start() {
@@ -1141,6 +1142,7 @@ class WhatsAppAPI {
             console.log(`\n💾 Database Management:`);
             console.log(`  POST   /database/backup         - Create database backup`);
             console.log(`  POST   /database/restore        - Restore from backup`);
+
             console.log(`\n📊 System:`);
             console.log(`  GET    /health                  - Health check with statistics`);
         });
