@@ -17,7 +17,7 @@ class WhatsAppStatusHandler {
 
             // await this.page.waitForTimeout(1000); // Wait for UI to load
             console.log('Waiting for Status button...');
-            const statusButton = this.page.locator('[aria-label="Status"]').first();
+            const statusButton = this.page.locator('[data-navbar-item-index="1"]').first();
 
             // Wait until visible (max 10s)
             await statusButton.waitFor({ state: 'visible', timeout: 10000 });

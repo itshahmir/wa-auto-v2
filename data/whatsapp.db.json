@@ -151,12 +151,53 @@
       "userId": "user_1757976628165",
       "phoneNumber": null,
       "createdAt": "2025-09-15T22:50:31.209Z",
-      "status": "active",
-      "lastActivity": "2025-09-15T23:38:49.347Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T00:17:07.627Z",
       "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\050c0b9d-126c-4424-841d-b60c2c69b7ae",
       "browserClosed": true,
       "authData": null,
-      "authMethod": "qr"
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T00:17:38.663Z"
+    },
+    {
+      "id": "f0cb3cc1-a050-4476-831c-01728dce6049",
+      "userId": "user_1757981860642",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T00:17:42.684Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T00:48:36.311Z",
+      "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\f0cb3cc1-a050-4476-831c-01728dce6049",
+      "browserClosed": true,
+      "terminatedAt": "2025-09-16T11:43:03.339Z"
+    },
+    {
+      "id": "16394953-a80e-4a0b-8931-c9677b6afe78",
+      "userId": "user_1758022953128",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:42:44.181Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T11:42:44.181Z",
+      "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\16394953-a80e-4a0b-8931-c9677b6afe78",
+      "terminatedAt": "2025-09-16T11:43:07.157Z"
+    },
+    {
+      "id": "da5884f3-d6df-4ed8-b5bb-a9c5f6d3f69e",
+      "userId": "user_1758022953128",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:42:44.261Z",
+      "status": "initializing",
+      "lastActivity": "2025-09-16T11:42:44.261Z",
+      "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\da5884f3-d6df-4ed8-b5bb-a9c5f6d3f69e"
+    },
+    {
+      "id": "5ce62da6-f36b-4eaf-b599-36e53d7db9ea",
+      "userId": "elyau",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:43:13.240Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T11:50:42.879Z",
+      "sessionPath": "E:\\Projects\\Fiverr\\Elyua\\custom-wa-automation\\wa-automation-v2\\src\\core\\sessions\\5ce62da6-f36b-4eaf-b599-36e53d7db9ea",
+      "browserClosed": true
     }
   ],
   "users": [
@@ -212,9 +253,30 @@
     {
       "userId": "user_1757976628165",
       "createdAt": "2025-09-15T22:50:31.208Z",
-      "lastActivity": "2025-09-15T23:38:49.348Z",
+      "lastActivity": "2025-09-16T00:17:07.627Z",
       "totalSessions": 1,
       "id": "mflpwa08iophnldog2h"
+    },
+    {
+      "userId": "user_1757981860642",
+      "createdAt": "2025-09-16T00:17:42.200Z",
+      "lastActivity": "2025-09-16T00:48:36.311Z",
+      "totalSessions": 1,
+      "id": "mflt0e9ktvypl7rrpvl"
+    },
+    {
+      "userId": "user_1758022953128",
+      "createdAt": "2025-09-16T11:42:34.291Z",
+      "lastActivity": "2025-09-16T11:42:44.283Z",
+      "totalSessions": 2,
+      "id": "mfmhh54jtrrznanlycl"
+    },
+    {
+      "userId": "elyau",
+      "createdAt": "2025-09-16T11:43:12.347Z",
+      "lastActivity": "2025-09-16T11:50:42.880Z",
+      "totalSessions": 1,
+      "id": "mfmhhyhn3zqswg2wq78"
     }
   ],
   "messages": [],
