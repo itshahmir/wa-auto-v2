@@ -7,11 +7,12 @@ const WhatsAppStatusHandler = require('./StatusHandler');
 // Enhanced WhatsApp Automation with Multi-User Support
 // ============================================
 class WhatsAppAutomation {
-    constructor(sessionPath = null, sessionId = null) {
+    constructor(sessionPath = null, sessionId = null, proxyConfig = null) {
         this.browser = null;
         this.page = null;
         this.sessionPath = sessionPath || path.join(__dirname, 'session');
         this.sessionId = sessionId || 'default';
+        this.proxyConfig = proxyConfig; // Store proxy configuration
         this.currentQRUrl = null;
         this.statusHandler = null;
         this.cdpSession = null;
@@ -59,6 +60,15 @@ class WhatsAppAutomation {
             ]
         };
 
+        // Add proxy configuration if available
+        if (this.proxyConfig) {
+            launchOptions.proxy = {
+                server: `${this.proxyConfig.protocol}://${this.proxyConfig.host}:${this.proxyConfig.port}`,
+                username: this.proxyConfig.username,
+                password: this.proxyConfig.password
+            };
+            console.log(`[${this.sessionId}] Using proxy: ${this.proxyConfig.host}:${this.proxyConfig.port}`);
+        }
 
         const browser = await playwright.chromium.launchPersistentContext(
             this.sessionPath,
@@ -101,13 +111,13 @@ class WhatsAppAutomation {
                 await page.evaluate(() => {
                     window.WPPConfig = {
                         sendStatusToDevice: true,
-                        syncAllStatus: true,
+                        syncAllStatus: false,
                     };
                     console.log('WPPConfig pre-configured with sendStatusToDevice and removeStatusMessage');
                 });
 
                 // Inject WA-JS using addScriptTag
-                const waJsPath = path.resolve("/home/ec2-user/wa-auto-v2/wa-js/dist/wppconnect-wa.js");
+                const waJsPath = path.resolve("/home/ubuntu/wa-auto-v2/wa-js/dist/wppconnect-wa.js");
 
                 await page.addScriptTag({
                     origin: "https://web.whatsapp.com/",

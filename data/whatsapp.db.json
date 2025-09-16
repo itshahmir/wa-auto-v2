@@ -169,7 +169,7 @@
       "createdAt": "2025-09-15T23:46:45.314Z",
       "status": "terminated",
       "lastActivity": "2025-09-15T23:59:15.571Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/b5e04fcc-ac90-4818-865d-1bfdbad3f535",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/b5e04fcc-ac90-4818-865d-1bfdbad3f535",
       "browserClosed": true,
       "authData": {
         "type": "qr",
@@ -185,7 +185,7 @@
       "createdAt": "2025-09-15T23:56:16.524Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T00:03:06.367Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/8118ad84-68c4-487f-ba91-dc22b5025f74",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/8118ad84-68c4-487f-ba91-dc22b5025f74",
       "browserClosed": true,
       "authData": {
         "type": "qr",
@@ -201,7 +201,7 @@
       "createdAt": "2025-09-15T23:59:45.737Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T00:06:08.500Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/aabc8fce-2e94-4cf5-8b2a-08c89a2f90ed",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/aabc8fce-2e94-4cf5-8b2a-08c89a2f90ed",
       "browserClosed": true,
       "authData": null,
       "authMethod": "qr",
@@ -214,7 +214,7 @@
       "createdAt": "2025-09-16T00:04:47.840Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T00:05:18.460Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/acb688fd-9d07-44a1-98e0-0205aef8ee51",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/acb688fd-9d07-44a1-98e0-0205aef8ee51",
       "terminatedAt": "2025-09-16T00:06:25.252Z"
     },
     {
@@ -224,7 +224,7 @@
       "createdAt": "2025-09-16T00:06:41.289Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T01:39:14.433Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/eeefdcf3-6345-41e4-832e-50cdb402546f",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/eeefdcf3-6345-41e4-832e-50cdb402546f",
       "authData": null,
       "authMethod": "qr",
       "terminatedAt": "2025-09-16T03:08:54.695Z"
@@ -236,7 +236,7 @@
       "createdAt": "2025-09-16T01:39:38.011Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T01:43:35.595Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/5deb1124-c770-42d7-a8a0-93702a9d9159",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/5deb1124-c770-42d7-a8a0-93702a9d9159",
       "terminatedAt": "2025-09-16T03:08:54.845Z"
     },
     {
@@ -246,7 +246,7 @@
       "createdAt": "2025-09-16T05:08:05.491Z",
       "status": "terminated",
       "lastActivity": "2025-09-16T05:10:05.840Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/625f0de3-c5a2-47e1-bb49-62ff014cc76b",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/625f0de3-c5a2-47e1-bb49-62ff014cc76b",
       "terminatedAt": "2025-09-16T05:10:05.891Z"
     },
     {
@@ -254,28 +254,164 @@
       "userId": "972546268012",
       "phoneNumber": null,
       "createdAt": "2025-09-16T05:12:17.952Z",
-      "status": "active",
-      "lastActivity": "2025-09-16T09:22:14.836Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/190fd9a8-22b4-4d32-aa1b-adce272c0abd"
+      "status": "terminated",
+      "lastActivity": "2025-09-16T11:08:37.349Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/190fd9a8-22b4-4d32-aa1b-adce272c0abd",
+      "authData": {
+        "type": "qr",
+        "qr": "2@8s2H58TrrcxQcCLL9u2Z3oglO6iQJNLnDmy+UuQJg6Eyoo5p2+/P7DLf2YRWxewBPmX/SPIj1YW6ZIfsaompojxdyfeDdv6jRUU=,O8Ry47y0yjCNf8HMaxykgEqyFuvGRmv9QlhDlKm8CW0=,F64cTSemU7qhhEKRsGODhNo9RGgcsKx0A4xlV2kUtiE=,NYQCp8vcNAZb6vV6HbWecoSStflIG7Cv3TvvGcUE3yo="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T11:11:31.285Z"
     },
     {
       "id": "6570a78e-caba-474e-8a23-33a28feb88da",
       "userId": "user_1758008651216",
       "phoneNumber": null,
       "createdAt": "2025-09-16T07:44:16.479Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T10:57:30.252Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/6570a78e-caba-474e-8a23-33a28feb88da",
+      "authData": null,
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T11:11:33.544Z"
+    },
+    {
+      "id": "639bd112-9ecc-460c-9fc1-800431a79e16",
+      "userId": "923705503590",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:11:44.310Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T11:53:23.178Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/639bd112-9ecc-460c-9fc1-800431a79e16",
+      "proxyId": "mfmgbz1u055hoyz2vcey",
+      "proxyInfo": {
+        "host": "gw.dataimpulse.com",
+        "port": 10001,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-16T11:53:54.569Z"
+    },
+    {
+      "id": "98e24674-df6d-4a0f-9cac-7c91c9f61dc6",
+      "userId": "9725426268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:16:52.169Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T11:40:07.438Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/98e24674-df6d-4a0f-9cac-7c91c9f61dc6",
+      "proxyId": "mfmgbz1l21a2op73ymy",
+      "proxyInfo": {
+        "host": "gw.dataimpulse.com",
+        "port": 10000,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-16T11:53:51.750Z"
+    },
+    {
+      "id": "a5785e43-60bb-4472-9959-6d23abffcf21",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T11:54:58.356Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T12:16:05.022Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/a5785e43-60bb-4472-9959-6d23abffcf21",
+      "proxyId": "mfmic0cn20zxfn27cv6",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-16T12:16:52.082Z"
+    },
+    {
+      "id": "ae9928b7-5e7a-41df-84ca-b47c5a5bc0f5",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T12:17:57.821Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T15:01:26.743Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/ae9928b7-5e7a-41df-84ca-b47c5a5bc0f5",
+      "proxyId": "mfmic0cn20zxfn27cv6",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-16T19:05:07.781Z"
+    },
+    {
+      "id": "e3ddad4f-b343-4d42-97bf-320850a87cfd",
+      "userId": "user_1758049530931",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T19:05:32.129Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-16T19:33:50.148Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/e3ddad4f-b343-4d42-97bf-320850a87cfd",
+      "proxyId": null,
+      "proxyInfo": null,
+      "authData": {
+        "type": "qr",
+        "qr": "2@q6Ov3gqyJ5zeafKmEpk0wctuNrGoX0l+jX7mOjVJC6dInYACfL3FmP9V7APAMULjApvT2DUKRWc5R48biv64WGdPErk+llDFDwk=,JXJ8rCE0kkZJ6vP33zUkbqL/PV2s0eUUJ7Yd5s3aEHM=,ui/MKx4XlZWzYyitZJHOGEEhsNPadUwVBHKGRCoL0V4=,ZIYAf/xSrDI+JWC70J2d2xRO/c+3x/0f7EeVKwUcbDk="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-16T19:33:50.214Z"
+    },
+    {
+      "id": "a44e645b-1c02-4ba9-8694-83c5ecb6b6b0",
+      "userId": "user_1758051249201",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T19:34:10.287Z",
       "status": "active",
-      "lastActivity": "2025-09-16T08:13:20.684Z",
-      "sessionPath": "/home/ec2-user/wa-auto-v2/src/core/sessions/6570a78e-caba-474e-8a23-33a28feb88da",
+      "lastActivity": "2025-09-16T21:14:31.662Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/a44e645b-1c02-4ba9-8694-83c5ecb6b6b0",
+      "proxyId": null,
+      "proxyInfo": null,
       "authData": null,
       "authMethod": "qr"
+    },
+    {
+      "id": "3c33b82f-e073-493a-82ae-04c51de97eb8",
+      "userId": "shahmir",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T20:48:31.560Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T21:03:31.547Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/3c33b82f-e073-493a-82ae-04c51de97eb8",
+      "proxyId": null,
+      "proxyInfo": null,
+      "authData": null,
+      "authMethod": "qr"
+    },
+    {
+      "id": "f791b7d7-9feb-43b7-a185-5894145bdaee",
+      "userId": "23",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T20:51:02.766Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T21:00:44.099Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/f791b7d7-9feb-43b7-a185-5894145bdaee",
+      "proxyId": null,
+      "proxyInfo": null
+    },
+    {
+      "id": "cb3ce131-db8e-4502-b218-1e15161ae931",
+      "userId": "55",
+      "phoneNumber": null,
+      "createdAt": "2025-09-16T21:11:48.319Z",
+      "status": "active",
+      "lastActivity": "2025-09-16T21:12:38.747Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/cb3ce131-db8e-4502-b218-1e15161ae931",
+      "proxyId": null,
+      "proxyInfo": null
     }
   ],
   "users": [
     {
       "userId": "shahmir",
       "createdAt": "2025-09-14T19:44:42.647Z",
-      "lastActivity": "2025-09-16T01:39:14.433Z",
-      "totalSessions": 9,
+      "lastActivity": "2025-09-16T21:03:31.548Z",
+      "totalSessions": 10,
       "id": "mfk3th1zidcjwrcw5ch"
     },
     {
@@ -365,16 +501,58 @@
     {
       "userId": "972546268012",
       "createdAt": "2025-09-16T05:08:05.491Z",
-      "lastActivity": "2025-09-16T09:22:14.836Z",
-      "totalSessions": 2,
+      "lastActivity": "2025-09-16T15:01:26.744Z",
+      "totalSessions": 4,
       "id": "mfm3du5v5p5zyhqhsb"
     },
     {
       "userId": "user_1758008651216",
       "createdAt": "2025-09-16T07:44:16.266Z",
-      "lastActivity": "2025-09-16T08:13:20.684Z",
+      "lastActivity": "2025-09-16T10:57:30.253Z",
       "totalSessions": 1,
       "id": "mfm8yop6quwv3sce7h8"
+    },
+    {
+      "userId": "923705503590",
+      "createdAt": "2025-09-16T11:11:44.083Z",
+      "lastActivity": "2025-09-16T11:53:23.178Z",
+      "totalSessions": 1,
+      "id": "mfmgdhhvemd3ue5ophg"
+    },
+    {
+      "userId": "9725426268012",
+      "createdAt": "2025-09-16T11:16:52.166Z",
+      "lastActivity": "2025-09-16T11:40:07.438Z",
+      "totalSessions": 1,
+      "id": "mfmgk37qh7fwdg789um"
+    },
+    {
+      "userId": "user_1758049530931",
+      "createdAt": "2025-09-16T19:05:32.128Z",
+      "lastActivity": "2025-09-16T19:33:50.148Z",
+      "totalSessions": 1,
+      "id": "mfmxaspsnrvbvjh5eid"
+    },
+    {
+      "userId": "user_1758051249201",
+      "createdAt": "2025-09-16T19:34:10.287Z",
+      "lastActivity": "2025-09-16T21:14:31.662Z",
+      "totalSessions": 1,
+      "id": "mfmybmgfce4ttu93uz"
+    },
+    {
+      "userId": "23",
+      "createdAt": "2025-09-16T20:51:02.765Z",
+      "lastActivity": "2025-09-16T21:00:44.099Z",
+      "totalSessions": 1,
+      "id": "mfn12hgt07ueg1ftr6cw"
+    },
+    {
+      "userId": "55",
+      "createdAt": "2025-09-16T21:11:48.318Z",
+      "lastActivity": "2025-09-16T21:12:38.747Z",
+      "totalSessions": 1,
+      "id": "mfn1t6jip89jlbse19e"
     }
   ],
   "messages": [],
@@ -382,5 +560,7 @@
     "version": "1.1.0",
     "createdAt": "2025-09-14T23:00:00.000Z",
     "lastMigration": "2025-09-14T23:00:00.000Z"
-  }
+  },
+  "proxies": [],
+  "proxyAssignments": []
 }

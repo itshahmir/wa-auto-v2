@@ -65,7 +65,7 @@ await page.evaluate(() => {
 });
 
 // Inject WA-JS bundle
-const waJsPath = path.resolve("/home/ec2-user/wa-auto-v2/wa-js/dist/wppconnect-wa.js");
+const waJsPath = path.resolve("/home/ubuntu/wa-auto-v2/wa-js/dist/wppconnect-wa.js");
 await page.addScriptTag({
     origin: "https://web.whatsapp.com/",
     path: waJsPath

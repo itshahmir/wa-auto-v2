@@ -3,6 +3,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const JsonDB = require('../database/JsonDB');
 const WhatsAppStatusHandler = require('./StatusHandler');
+const ProxyManager = require('./ProxyManager');
 
 // ============================================
 // Multi-User Session Manager with Database Persistence
@@ -17,8 +18,17 @@ class SessionManager {
         this.sessionsCollection = this.db.collection('sessions');
         this.usersCollection = this.db.collection('users');
 
+        // Initialize proxy manager
+        this.proxyManager = new ProxyManager(this.db);
+
         // Load existing sessions from database
         this.loadSessionsFromDB();
+
+        // Fix invalid proxy assignments on startup
+        this.fixInvalidProxyAssignments();
+
+        // Schedule periodic session restart for proxy rotations
+        this.startSessionRestartScheduler();
     }
 
     loadSessionsFromDB() {
@@ -44,9 +54,30 @@ class SessionManager {
             });
         }
 
+        // Assign proxy to user (creates proxy assignment if not exists)
+        let proxyAssignment = null;
+        try {
+            const proxyResult = this.proxyManager.assignProxyToUser(userId, sessionId);
+            proxyAssignment = proxyResult;
+            console.log(`[${sessionId}] Assigned proxy: ${proxyResult.proxy.host}:${proxyResult.proxy.port}`);
+        } catch (error) {
+            console.warn(`[${sessionId}] No proxy assigned: ${error.message}`);
+
+            // Try to assign any available proxy from the pool
+            try {
+                console.log(`[${sessionId}] Attempting to assign any available proxy from pool...`);
+                proxyAssignment = this.assignAvailableProxy(userId, sessionId);
+                if (proxyAssignment) {
+                    console.log(`[${sessionId}] Successfully assigned available proxy: ${proxyAssignment.proxy.host}:${proxyAssignment.proxy.port}`);
+                }
+            } catch (fallbackError) {
+                console.warn(`[${sessionId}] No available proxies to assign: ${fallbackError.message}`);
+            }
+        }
+
         // Import WhatsAppAutomation class here to avoid circular dependency
         const { WhatsAppAutomation } = require('./WhatsAppAutomation');
-        const automation = new WhatsAppAutomation(sessionPath, sessionId);
+        const automation = new WhatsAppAutomation(sessionPath, sessionId, proxyAssignment?.proxy);
         this.sessions.set(sessionId, automation);
 
         // Create session metadata
@@ -57,7 +88,13 @@ class SessionManager {
             createdAt: new Date(),
             status: 'initializing',
             lastActivity: new Date(),
-            sessionPath
+            sessionPath,
+            proxyId: proxyAssignment?.proxy?.id || null,
+            proxyInfo: proxyAssignment?.proxy ? {
+                host: proxyAssignment.proxy.host,
+                port: proxyAssignment.proxy.port,
+                status: proxyAssignment.proxy.status
+            } : null
         };
 
         // Save to database
@@ -158,6 +195,23 @@ class SessionManager {
         if (automation) {
             await automation.cleanup(true); // Force close browser during removal
             this.sessions.delete(sessionId);
+        }
+
+        // Deactivate proxy assignment if exists
+        if (metadata && metadata.userId) {
+            try {
+                const assignment = this.proxyManager.assignmentsCollection.findOne({
+                    userId: metadata.userId,
+                    sessionId: sessionId,
+                    status: 'active'
+                });
+                if (assignment) {
+                    this.proxyManager.deactivateAssignment(assignment.id);
+                    console.log(`[${sessionId}] Deactivated proxy assignment for user ${metadata.userId}`);
+                }
+            } catch (error) {
+                console.warn(`[${sessionId}] Error deactivating proxy assignment: ${error.message}`);
+            }
         }
 
         // Mark session as terminated in database
@@ -441,6 +495,111 @@ class SessionManager {
         }
     }
 
+    // Proxy management methods
+    getUserProxy(userId) {
+        return this.proxyManager.getUserProxy(userId);
+    }
+
+    /**
+     * Assign any available proxy from the pool when no proxy exists
+     */
+    assignAvailableProxy(userId, sessionId) {
+        try {
+            // Get all available proxies (healthy, degraded, or unchecked)
+            const availableProxies = this.proxyManager.proxiesCollection.find({
+                status: { $in: ['healthy', 'degraded', 'unchecked'] }
+            });
+
+            if (availableProxies.length === 0) {
+                throw new Error('No proxies available in the pool');
+            }
+
+            // Sort by current assignments (least used first)
+            availableProxies.sort((a, b) => {
+                const aAssignments = a.usage?.currentAssignments || 0;
+                const bAssignments = b.usage?.currentAssignments || 0;
+                return aAssignments - bAssignments;
+            });
+
+            const selectedProxy = availableProxies[0];
+
+            // Create assignment directly
+            const assignment = this.proxyManager.assignmentsCollection.insert({
+                userId,
+                sessionId,
+                proxyId: selectedProxy.id,
+                status: 'active',
+                assignedAt: new Date(),
+                lastRotation: new Date(),
+                rotationCount: 0
+            });
+
+            // Update proxy usage
+            this.proxyManager.proxiesCollection.updateById(selectedProxy.id, {
+                'usage.currentAssignments': (selectedProxy.usage?.currentAssignments || 0) + 1,
+                'usage.totalAssignments': (selectedProxy.usage?.totalAssignments || 0) + 1,
+                'usage.lastUsed': new Date(),
+                updatedAt: new Date()
+            });
+
+            console.log(`[SessionManager] Manually assigned proxy ${selectedProxy.host}:${selectedProxy.port} to user ${userId}`);
+
+            return {
+                assignment,
+                proxy: selectedProxy
+            };
+
+        } catch (error) {
+            console.error('[SessionManager] Error in assignAvailableProxy:', error.message);
+            throw error;
+        }
+    }
+
+    rotateUserProxy(userId) {
+        try {
+            const result = this.proxyManager.rotateUserProxy(userId);
+
+            // Update session metadata if there's an active session
+            const userSessions = this.sessionsCollection.find({
+                userId,
+                status: { $ne: 'terminated' }
+            });
+
+            userSessions.forEach(session => {
+                const metadata = this.sessionMetadata.get(session.id);
+                if (metadata && result.proxy) {
+                    metadata.proxyId = result.proxy.id;
+                    metadata.proxyInfo = {
+                        host: result.proxy.host,
+                        port: result.proxy.port,
+                        status: result.proxy.status
+                    };
+
+                    // Update in database
+                    this.sessionsCollection.updateById(session.id, {
+                        proxyId: result.proxy.id,
+                        proxyInfo: metadata.proxyInfo,
+                        lastActivity: new Date()
+                    });
+
+                    // Update existing session with new proxy (requires restart)
+                    const automation = this.sessions.get(session.id);
+                    if (automation) {
+                        console.log(`[SessionManager] Proxy rotated for session ${session.id}, restart recommended for new proxy to take effect`);
+                        // Note: Existing browser contexts can't change proxy mid-session
+                        // The new proxy will be used when the session is next restarted
+                        metadata.proxyRotationPending = true;
+                    }
+                }
+            });
+
+            return result;
+        } catch (error) {
+            console.error(`[SessionManager] Error rotating proxy for user ${userId}:`, error.message);
+            throw error;
+        }
+    }
+
     // Statistics methods
     getStatistics() {
         const totalUsers = this.usersCollection.count();
@@ -448,13 +607,174 @@ class SessionManager {
         const activeSessions = this.sessionsCollection.count({ status: { $ne: 'terminated' } });
         const readySessions = this.sessionsCollection.count({ status: 'ready' });
 
+        // Get proxy statistics
+        const proxyStats = this.proxyManager.getStatistics();
+
         return {
             totalUsers,
             totalSessions,
             activeSessions,
             readySessions,
-            memoryActiveSessions: this.sessions.size
+            memoryActiveSessions: this.sessions.size,
+            proxies: proxyStats
         };
+    }
+
+    /**
+     * Restart sessions that have pending proxy rotations
+     */
+    async restartSessionsWithPendingProxyRotation() {
+        try {
+            const sessionsWithPendingRotation = Array.from(this.sessionMetadata.entries())
+                .filter(([_, metadata]) => metadata.proxyRotationPending && this.sessions.has(metadata.id))
+                .map(([sessionId, _]) => sessionId);
+
+            if (sessionsWithPendingRotation.length === 0) {
+                return;
+            }
+
+            console.log(`[SessionManager] Restarting ${sessionsWithPendingRotation.length} sessions with pending proxy rotations`);
+
+            for (const sessionId of sessionsWithPendingRotation) {
+                try {
+                    const metadata = this.sessionMetadata.get(sessionId);
+                    if (!metadata) continue;
+
+                    console.log(`[SessionManager] Restarting session ${sessionId} for proxy rotation`);
+
+                    // Close existing session
+                    const automation = this.sessions.get(sessionId);
+                    if (automation) {
+                        await automation.cleanup(false); // Don't force, allow graceful shutdown
+                        this.sessions.delete(sessionId);
+                    }
+
+                    // Get new proxy assignment
+                    const proxyResult = this.proxyManager.assignProxyToUser(metadata.userId, sessionId);
+
+                    // Create new automation instance with new proxy
+                    const { WhatsAppAutomation } = require('./WhatsAppAutomation');
+                    const newAutomation = new WhatsAppAutomation(metadata.sessionPath, sessionId, proxyResult?.proxy);
+                    this.sessions.set(sessionId, newAutomation);
+
+                    // Update metadata
+                    metadata.proxyRotationPending = false;
+                    if (proxyResult?.proxy) {
+                        metadata.proxyId = proxyResult.proxy.id;
+                        metadata.proxyInfo = {
+                            host: proxyResult.proxy.host,
+                            port: proxyResult.proxy.port,
+                            status: proxyResult.proxy.status
+                        };
+                    }
+
+                    // Update in database
+                    this.sessionsCollection.updateById(sessionId, {
+                        proxyId: metadata.proxyId,
+                        proxyInfo: metadata.proxyInfo,
+                        lastActivity: new Date(),
+                        status: 'initializing' // Reset status as session is restarting
+                    });
+
+                    console.log(`[SessionManager] Session ${sessionId} restarted with new proxy: ${metadata.proxyInfo?.host}:${metadata.proxyInfo?.port}`);
+
+                    // Small delay between restarts
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } catch (error) {
+                    console.error(`[SessionManager] Error restarting session ${sessionId}:`, error.message);
+                }
+            }
+        } catch (error) {
+            console.error('[SessionManager] Error in restartSessionsWithPendingProxyRotation:', error.message);
+        }
+    }
+
+    /**
+     * Fix sessions that have invalid or non-existent proxy assignments
+     */
+    fixInvalidProxyAssignments() {
+        try {
+            console.log('[SessionManager] Checking for sessions with invalid proxy assignments...');
+
+            const activeSessions = this.sessionsCollection.find({
+                status: { $ne: 'terminated' }
+            });
+
+            let fixedCount = 0;
+
+            activeSessions.forEach(session => {
+                let needsFix = false;
+
+                if (!session.proxyId) {
+                    console.log(`[SessionManager] Session ${session.id} has no proxy assigned`);
+                    needsFix = true;
+                } else {
+                    // Check if the proxy still exists
+                    const proxy = this.proxyManager.proxiesCollection.findById(session.proxyId);
+                    if (!proxy) {
+                        console.log(`[SessionManager] Session ${session.id} has invalid proxy ID: ${session.proxyId}`);
+                        needsFix = true;
+                    }
+                }
+
+                if (needsFix) {
+                    try {
+                        // Assign a new proxy
+                        const proxyResult = this.assignAvailableProxy(session.userId, session.id);
+
+                        if (proxyResult) {
+                            // Update session in database
+                            this.sessionsCollection.updateById(session.id, {
+                                proxyId: proxyResult.proxy.id,
+                                proxyInfo: {
+                                    host: proxyResult.proxy.host,
+                                    port: proxyResult.proxy.port,
+                                    status: proxyResult.proxy.status
+                                },
+                                lastActivity: new Date()
+                            });
+
+                            // Update in-memory metadata if session is loaded
+                            const metadata = this.sessionMetadata.get(session.id);
+                            if (metadata) {
+                                metadata.proxyId = proxyResult.proxy.id;
+                                metadata.proxyInfo = {
+                                    host: proxyResult.proxy.host,
+                                    port: proxyResult.proxy.port,
+                                    status: proxyResult.proxy.status
+                                };
+                            }
+
+                            console.log(`[SessionManager] Fixed proxy assignment for session ${session.id}: ${proxyResult.proxy.host}:${proxyResult.proxy.port}`);
+                            fixedCount++;
+                        }
+                    } catch (assignError) {
+                        console.error(`[SessionManager] Failed to fix proxy for session ${session.id}: ${assignError.message}`);
+                    }
+                }
+            });
+
+            if (fixedCount > 0) {
+                console.log(`[SessionManager] Fixed proxy assignments for ${fixedCount} sessions`);
+            } else {
+                console.log('[SessionManager] All active sessions have valid proxy assignments');
+            }
+
+        } catch (error) {
+            console.error('[SessionManager] Error in fixInvalidProxyAssignments:', error.message);
+        }
+    }
+
+    /**
+     * Start scheduler for session restarts when proxy rotation is needed
+     */
+    startSessionRestartScheduler() {
+        // Check every 5 minutes for sessions needing proxy rotation restart
+        this.sessionRestartTimer = setInterval(() => {
+            this.restartSessionsWithPendingProxyRotation();
+        }, 5 * 60 * 1000);
+
+        console.log('[SessionManager] Started session restart scheduler for proxy rotations (checks every 5 minutes)');
     }
 
 }

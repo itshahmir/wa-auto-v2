@@ -1,6 +1,6 @@
 // API Client for WhatsApp Automation
 class WhatsAppAPI {
-    constructor(baseURL = 'https://whatsapp.social-crm.co.il') {
+    constructor(baseURL = 'http://98.88.152.87:3000') {
         this.baseURL = baseURL;
         this.currentSessionId = null;
     }

@@ -1113,6 +1113,164 @@ class WhatsAppAPI {
             }
         });
 
+        // ============================================
+        // Proxy Management Routes
+        // ============================================
+
+        // Get all proxies
+        this.app.get('/proxies', (req, res) => {
+            try {
+                const proxies = this.sessionManager.proxyManager.getAllProxies();
+                res.json({ proxies });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Get proxy by ID
+        this.app.get('/proxies/:proxyId', (req, res) => {
+            try {
+                const proxy = this.sessionManager.proxyManager.getProxyById(req.params.proxyId);
+                if (!proxy) {
+                    return res.status(404).json({ error: 'Proxy not found' });
+                }
+                res.json(proxy);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Add single proxy
+        this.app.post('/proxies', async (req, res) => {
+            try {
+                const { proxy, tags = [] } = req.body;
+
+                if (!proxy) {
+                    return res.status(400).json({ error: 'Proxy string is required' });
+                }
+
+                const result = await this.sessionManager.proxyManager.addProxy(proxy, tags);
+                res.json({ success: true, proxy: result });
+            } catch (error) {
+                res.status(400).json({ error: error.message });
+            }
+        });
+
+        // Bulk import proxies
+        this.app.post('/proxies/import', async (req, res) => {
+            try {
+                const { proxies, tags = [] } = req.body;
+
+                if (!proxies || !Array.isArray(proxies)) {
+                    return res.status(400).json({ error: 'Proxies array is required' });
+                }
+
+                const result = await this.sessionManager.proxyManager.importProxies(proxies, tags);
+                res.json({ success: true, result });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Import proxies from uploaded file
+        this.app.post('/proxies/import/file', async (req, res) => {
+            try {
+                const { filePath, tags = [] } = req.body;
+
+                if (!filePath) {
+                    return res.status(400).json({ error: 'File path is required' });
+                }
+
+                const result = await this.sessionManager.proxyManager.importProxiesFromFile(filePath, tags);
+                res.json({ success: true, result });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Remove proxy
+        this.app.delete('/proxies/:proxyId', (req, res) => {
+            try {
+                const removed = this.sessionManager.proxyManager.removeProxy(req.params.proxyId);
+                if (removed) {
+                    res.json({ success: true });
+                } else {
+                    res.status(404).json({ error: 'Proxy not found' });
+                }
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Check proxy health manually
+        this.app.post('/proxies/:proxyId/health-check', async (req, res) => {
+            try {
+                const result = await this.sessionManager.proxyManager.checkProxyHealth(req.params.proxyId);
+                const proxy = this.sessionManager.proxyManager.getProxyById(req.params.proxyId);
+
+                res.json({
+                    success: result,
+                    proxy: proxy,
+                    message: result ? 'Health check passed' : 'Health check failed'
+                });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Run health checks for all proxies
+        this.app.post('/proxies/health-check', async (req, res) => {
+            try {
+                const results = await this.sessionManager.proxyManager.runHealthChecks();
+                res.json({ success: true, results });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Get proxy statistics
+        this.app.get('/proxies/statistics', (req, res) => {
+            try {
+                const stats = this.sessionManager.proxyManager.getStatistics();
+                res.json(stats);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Get user's proxy assignment
+        this.app.get('/users/:userId/proxy', (req, res) => {
+            try {
+                const result = this.sessionManager.getUserProxy(req.params.userId);
+                if (!result) {
+                    return res.status(404).json({ error: 'No proxy assigned to user' });
+                }
+                res.json(result);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Rotate user's proxy
+        this.app.post('/users/:userId/proxy/rotate', (req, res) => {
+            try {
+                const result = this.sessionManager.rotateUserProxy(req.params.userId);
+                res.json({ success: true, result });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Get all proxy assignments
+        this.app.get('/proxy-assignments', (req, res) => {
+            try {
+                const assignments = this.sessionManager.proxyManager.assignmentsCollection.find();
+                res.json({ assignments });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
     }
 
     start() {
@@ -1142,6 +1300,20 @@ class WhatsAppAPI {
             console.log(`\n💾 Database Management:`);
             console.log(`  POST   /database/backup         - Create database backup`);
             console.log(`  POST   /database/restore        - Restore from backup`);
+
+            console.log(`\n🌐 Proxy Management:`);
+            console.log(`  GET    /proxies                 - List all proxies`);
+            console.log(`  GET    /proxies/:id             - Get proxy details`);
+            console.log(`  POST   /proxies                 - Add single proxy`);
+            console.log(`  POST   /proxies/import          - Import proxies array`);
+            console.log(`  POST   /proxies/import/file     - Import proxies from file`);
+            console.log(`  DELETE /proxies/:id             - Remove proxy`);
+            console.log(`  POST   /proxies/:id/health-check - Check proxy health`);
+            console.log(`  POST   /proxies/health-check    - Check all proxies health`);
+            console.log(`  GET    /proxies/statistics      - Get proxy statistics`);
+            console.log(`  GET    /users/:id/proxy         - Get user's proxy assignment`);
+            console.log(`  POST   /users/:id/proxy/rotate  - Rotate user's proxy`);
+            console.log(`  GET    /proxy-assignments       - List all proxy assignments`);
 
             console.log(`\n📊 System:`);
             console.log(`  GET    /health                  - Health check with statistics`);

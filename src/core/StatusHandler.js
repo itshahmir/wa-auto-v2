@@ -22,7 +22,7 @@ class WhatsAppStatusHandler {
 
         try {
             // Wait for any matching element to be visible
-            await statusButton.waitFor({ state: 'visible', timeout: 5000 });
+            await statusButton.waitFor({ state: 'visible', timeout: 10000 });
 
             console.log('Found Status button, clicking...');
             await statusButton.click();
@@ -31,17 +31,6 @@ class WhatsAppStatusHandler {
             await this.page.waitForTimeout(1000);
 
             console.log('Status button clicked successfully');
-
-            // Remove the status list element if it exists
-            await this.page.evaluate(() => {
-                const statusList = document.querySelector('.statusList');
-                if (statusList) {
-                    statusList.remove();
-                    console.log('Status list element removed');
-                } else {
-                    console.log('No status list element found to remove');
-                }
-            });
 
             return true;
         } catch (error) {
@@ -55,6 +44,32 @@ class WhatsAppStatusHandler {
         }
     }
 
+    // Centralized WA-JS readiness waiting function
+    async waitForWAJS(statusMethod = null, timeout = 20000) {
+        console.log(`Waiting for WA-JS to be ready${statusMethod ? ` with ${statusMethod}` : ''}...`);
+
+        await this.page.waitForFunction((method) => {
+            if (typeof window.WPP === 'undefined' || !window.WPP.isFullReady) {
+                return false;
+            }
+
+            if (!method) return true;
+
+            // Check for specific status method if provided
+            if (method === 'sendTextStatus') {
+                return window.WPP.status && typeof window.WPP.status.sendTextStatus === 'function';
+            } else if (method === 'sendVideoStatus') {
+                return window.WPP.status && typeof window.WPP.status.sendVideoStatus === 'function';
+            } else if (method === 'sendImageStatus') {
+                return window.WPP.status && typeof window.WPP.status.sendImageStatus === 'function';
+            }
+
+            return window.WPP.status !== undefined;
+        }, statusMethod, { timeout });
+
+        console.log('WA-JS is fully ready');
+    }
+
     // Helper function to check WA-JS availability
     async checkWAJSAvailability() {
         return await this.page.evaluate(() => {
@@ -66,441 +81,216 @@ class WhatsAppStatusHandler {
                 sendImageStatus: window.WPP && window.WPP.status && typeof window.WPP.status.sendImageStatus === 'function',
                 sendVideoStatus: window.WPP && window.WPP.status && typeof window.WPP.status.sendVideoStatus === 'function',
                 chatExists: window.WPP && window.WPP.chat,
-                sendMessage: window.WPP && window.WPP.chat && typeof window.WPP.chat.sendMessage === 'function',
+                sendMessage: window.WPP && window.WPP.chat && typeof window.WPP.chat.sendTextMessage === 'function',
                 sendFileMessage: window.WPP && window.WPP.chat && typeof window.WPP.chat.sendFileMessage === 'function'
             };
 
             return {
                 ...checks,
-                isReady: checks.wppExists && checks.isFullReady && checks.statusExists,
+                isReady: checks.wppExists && checks.isFullReady && checks.sendTextStatus,
                 hasAlternatives: checks.chatExists && (checks.sendMessage || checks.sendFileMessage)
             };
         });
     }
 
-    // async sendTextStatus(content, options = {}) {
-    //     console.log('Sending text status...');
-
-    //     try {
-    //         // Check WA-JS availability first
-    //         let wajs = await this.checkWAJSAvailability();
-    //         console.log('WA-JS availability check:', wajs);
-
-    //         if (!wajs.isReady) {
-    //             console.log('WA-JS not ready, waiting...');
-    //             // Wait until WA-JS is fully ready
-    //             await this.page.waitForFunction(() => {
-    //                 return typeof window.WPP !== 'undefined' &&
-    //                        window.WPP.isFullReady &&
-    //                        window.WPP.status &&
-    //                        typeof window.WPP.status.sendTextStatus === 'function';
-    //             }, { timeout: 20000 }); // 20s max wait for full initialization
-
-    //             // Re-check after waiting
-    //             wajs = await this.checkWAJSAvailability();
-    //             console.log('WA-JS availability after wait:', wajs);
-    //         }
-
-    //         if (!wajs.isReady && !wajs.hasAlternatives) {
-    //             throw new Error('WA-JS is not ready and no alternative methods available');
-    //         }
-
-    //         console.log('WA-JS is ready for status sending...');
-
-    //         // Try multiple selectors for the Status button simultaneously
-    //         const statusButtonSelectors = [
-    //             'button[aria-label="Status"]',
-    //             'button[aria-label="Updates in Status"]',
-    //             'div[aria-label="Status"]',
-    //             '[data-tab="3"]', // Status tab
-    //             'button:has-text("Status")',
-    //             '[role="button"]:has-text("Status")'
-    //         ];
-
-    //         console.log('Looking for Status button with multiple selectors...');
-
-    //         // Create a combined locator that matches any of the selectors
-    //         const statusButton = this.page.locator(
-    //             statusButtonSelectors.join(', ')
-    //         ).first();
-
-    //         try {
-    //             // Wait for any matching element to be visible
-    //             await statusButton.waitFor({ state: 'visible', timeout: 5000 });
-
-    //             // Get the actual selector that matched (for logging)
-    //             const matchedElement = await statusButton.elementHandle();
-
-    //             console.log('Found Status button, clicking...');
-    //             await statusButton.click();
-
-    //             // Verify click was successful by waiting for expected behavior
-    //             await this.page.waitForTimeout(1000);
-
-    //             console.log('Status button clicked successfully');
-    //         } catch (error) {
-    //             console.error('Could not find Status button with any of the selectors:', error.message);
-
-    //             // Optional: Log which elements ARE visible for debugging
-    //             const visibleButtons = await this.page.locator('button:visible, div[role="button"]:visible').all();
-    //             console.log(`Found ${visibleButtons.length} visible buttons on page`);
-
-    //             throw new Error('Could not find or click Status button');
-    //         }
-
-
-    //         // Send text status using WA-JS
-    //         const result = await this.page.evaluate(async ({ statusContent, statusOptions }) => {
-    //             try {
-    //                 // Check if WPP.status is available
-    //                 if (!window.WPP || !window.WPP.status || !window.WPP.status.sendTextStatus) {
-    //                     throw new Error('WPP.status.sendTextStatus is not available');
-    //                 }
-
-    //                 console.log('Sending text status with WA-JS...', { statusContent, statusOptions });
-
-    //                 // Try to send the status
-    //                 const result = await window.WPP.status.sendTextStatus(statusContent, statusOptions);
-    //                 console.log('Text status sent successfully:', result);
-
-    //                 return result;
-    //             } catch (error) {
-    //                 console.error('WA-JS sendTextStatus error:', error);
-
-    //                 // If WA-JS method fails, try alternative approach
-    //                 try {
-    //                     console.log('Trying alternative status sending method...');
-
-    //                     // Alternative: Use broadcast chat method
-    //                     if (window.WPP.chat && window.WPP.chat.sendMessage) {
-    //                         const statusResult = await window.WPP.chat.sendMessage('status@broadcast', statusContent, {
-    //                             ...statusOptions,
-    //                             createChat: true
-    //                         });
-
-    //                         console.log('Alternative method succeeded:', statusResult);
-    //                         return statusResult;
-    //                     }
-    //                 } catch (altError) {
-    //                     console.error('Alternative method also failed:', altError);
-    //                 }
-
-    //                 throw new Error(`Failed to send text status: ${error.message}`);
-    //             }
-    //         }, { statusContent: content, statusOptions: options });
-
-    //         console.log('Text status sent successfully:', result);
-    //         return result;
-
-    //     } catch (error) {
-    //         console.error('Error sending text status:', error.message);
-    //         throw error;
-    //     }
-    // }
-
-    async sendTextStatus(content, options = {}) {
-        console.log('Sending text status...');
+    // Generic status sending method - ultra fast direct
+    async sendStatus(type, content, options = {}) {
+        console.log(`[${new Date().toISOString()}] Sending ${type} status with ultra-fast method...`);
 
         try {
-            // Wait until WA-JS is fully ready
-            await this.page.waitForFunction(() => {
-                return typeof window.WPP !== 'undefined' && window.WPP.isFullReady;
-            }, { timeout: 15000 }); // 15s max wait
+            // Set timeout for page operations including keyboard shortcuts
+            this.page.setDefaultTimeout(6000);
 
-            console.log('WA-JS is fully ready...');
-            console.log('WA-JS is ready for status sending...');
-
-            // Click Status button using helper function
-            await this.clickStatusButton();
-
-            // Send text status using WA-JS
-            const result = await this.page.evaluate(async ({ statusContent, statusOptions }) => {
+            const result = await this.page.evaluate(async ({ statusType, statusContent, statusOptions }) => {
                 try {
-                    return await window.WPP.status.sendTextStatus(statusContent, statusOptions);
-                } catch (error) {
-                    throw new Error(`Failed to send text status: ${error.message}`);
-                }
-            }, { statusContent: content, statusOptions: options });
+                    console.log(`[${new Date().toISOString()}] Sending ${statusType} NOW...`);
 
-            console.log('Text status sent successfully:', result);
+                    // Method 0: Try direct Store manipulation first (fastest for new users)
+                    if (window.Store && window.Store.StatusV3) {
+                        try {
+                            console.log(`[${new Date().toISOString()}] Trying direct Store.StatusV3 method...`);
+
+                            if (statusType === 'text') {
+                                // Create status message directly
+                                const statusMsg = {
+                                    type: 'text',
+                                    body: statusContent,
+                                    isViewOnce: false,
+                                    ...statusOptions
+                                };
+
+                                // Try to send via Store
+                                if (window.Store.StatusV3.sendMessage) {
+                                    const result = await window.Store.StatusV3.sendMessage(statusMsg);
+                                    if (result) {
+                                        console.log(`[${new Date().toISOString()}] SUCCESS via Store.StatusV3 - ${statusType} sent!`, result);
+                                        return { success: true, method: 'store_status_v3', result: result };
+                                    }
+                                }
+                            }
+                        } catch (storeError) {
+                            console.log(`[${new Date().toISOString()}] Store.StatusV3 failed:`, storeError.message);
+                        }
+                    }
+
+                    // Method 1: Try WPP.status (more reliable for existing users)
+                    if (window.WPP && window.WPP.status) {
+                        try {
+                            let statusResult;
+
+                            if (statusType === 'text' && window.WPP.status.sendTextStatus) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.status.sendTextStatus...`);
+                                statusResult = await window.WPP.status.sendTextStatus(statusContent, statusOptions);
+                            } else if (statusType === 'image' && window.WPP.status.sendImageStatus) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.status.sendImageStatus...`);
+                                statusResult = await window.WPP.status.sendImageStatus(statusContent, statusOptions);
+                            } else if (statusType === 'video' && window.WPP.status.sendVideoStatus) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.status.sendVideoStatus...`);
+                                statusResult = await window.WPP.status.sendVideoStatus(statusContent, statusOptions);
+                            }
+
+                            if (statusResult) {
+                                console.log(`[${new Date().toISOString()}] SUCCESS via WPP.status - ${statusType} sent!`, statusResult);
+                                return { success: true, method: 'wpp_status', result: statusResult };
+                            }
+                        } catch (statusError) {
+                            console.log(`[${new Date().toISOString()}] WPP.status failed, trying chat method...`, statusError.message);
+                        }
+                    }
+
+                    // Method 2: Try WhatsApp functions for new users
+                    if (window.WPP && window.WPP.whatsapp && window.WPP.whatsapp.functions) {
+                        try {
+                            let statusResult;
+
+                            if (statusType === 'text' && window.WPP.whatsapp.functions.sendTextStatusMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.whatsapp.functions.sendTextStatusMessage...`);
+                                statusResult = await window.WPP.whatsapp.functions.sendTextStatusMessage(statusContent, statusOptions || {});
+                            } else if (statusType === 'image' && window.WPP.whatsapp.functions.sendImageStatusMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.whatsapp.functions.sendImageStatusMessage...`);
+                                statusResult = await window.WPP.whatsapp.functions.sendImageStatusMessage(statusContent, statusOptions || {});
+                            } else if (statusType === 'video' && window.WPP.whatsapp.functions.sendVideoStatusMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.whatsapp.functions.sendVideoStatusMessage...`);
+                                statusResult = await window.WPP.whatsapp.functions.sendVideoStatusMessage(statusContent, statusOptions || {});
+                            }
+
+                            if (statusResult) {
+                                console.log(`[${new Date().toISOString()}] SUCCESS via WPP.whatsapp.functions - ${statusType} sent!`, statusResult);
+                                return { success: true, method: 'whatsapp_functions', result: statusResult };
+                            }
+                        } catch (functionsError) {
+                            console.log(`[${new Date().toISOString()}] WPP.whatsapp.functions failed:`, functionsError.message);
+                        }
+                    }
+
+                    // Method 3: Try using keyboard shortcut for new users
+                    console.log(`[${new Date().toISOString()}] Trying keyboard shortcut method...`);
+                    try {
+                        // Press Ctrl+Shift+S to open status composer
+                        const event = new KeyboardEvent('keydown', {
+                            key: 'S',
+                            code: 'KeyS',
+                            ctrlKey: true,
+                            shiftKey: true,
+                            bubbles: true
+                        });
+                        document.dispatchEvent(event);
+
+                        // Wait for status composer to open
+                        await new Promise(resolve => setTimeout(resolve, 800));
+
+                        if (statusType === 'text') {
+                            // Try to find the status text input
+                            const statusTextInput = document.querySelector('div[contenteditable="true"][data-testid="status-text-input"], div[contenteditable="true"][aria-label*="status"], div[contenteditable="true"][placeholder*="status"]') ||
+                                                  document.querySelector('div[contenteditable="true"]:not([data-testid="conversation-compose-box-input"])');
+
+                            if (statusTextInput) {
+                                // Focus and type the text
+                                statusTextInput.focus();
+                                statusTextInput.innerText = statusContent;
+
+                                // Trigger input event
+                                const inputEvent = new Event('input', { bubbles: true });
+                                statusTextInput.dispatchEvent(inputEvent);
+
+                                // Wait a bit then look for send button
+                                await new Promise(resolve => setTimeout(resolve, 500));
+
+                                const sendButton = document.querySelector('button[data-testid="status-send"], button[aria-label*="Send"], span[data-testid="send"]') ||
+                                                 [...document.querySelectorAll('button')].find(btn =>
+                                                     btn.innerText.toLowerCase().includes('send') ||
+                                                     btn.querySelector('svg[data-testid="send"]')
+                                                 );
+
+                                if (sendButton && !sendButton.disabled) {
+                                    sendButton.click();
+                                    console.log(`[${new Date().toISOString()}] SUCCESS via keyboard shortcut - ${statusType} sent!`);
+                                    return { success: true, method: 'keyboard_shortcut', result: 'sent via UI' };
+                                }
+                            }
+                        }
+                    } catch (keyboardError) {
+                        console.log(`[${new Date().toISOString()}] Keyboard shortcut failed:`, keyboardError.message);
+                    }
+
+                    // Method 4: Try WPP.chat for existing users (as last resort)
+                    if (window.WPP && window.WPP.chat) {
+                        try {
+                            let statusResult;
+
+                            if (statusType === 'text' && window.WPP.chat.sendTextMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.chat.sendTextMessage as last resort...`);
+                                statusResult = await window.WPP.chat.sendTextMessage('status@broadcast', statusContent);
+                            } else if (statusType === 'image' && window.WPP.chat.sendFileMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.chat.sendFileMessage for image as last resort...`);
+                                statusResult = await window.WPP.chat.sendFileMessage('status@broadcast', statusContent, statusOptions);
+                            } else if (statusType === 'video' && window.WPP.chat.sendFileMessage) {
+                                console.log(`[${new Date().toISOString()}] Using WPP.chat.sendFileMessage for video as last resort...`);
+                                statusResult = await window.WPP.chat.sendFileMessage('status@broadcast', statusContent, statusOptions);
+                            }
+
+                            if (statusResult) {
+                                console.log(`[${new Date().toISOString()}] SUCCESS via WPP.chat - ${statusType} sent!`, statusResult);
+                                return { success: true, method: 'wpp_chat', result: statusResult };
+                            }
+                        } catch (chatError) {
+                            console.log(`[${new Date().toISOString()}] WPP.chat failed:`, chatError.message);
+                        }
+                    }
+
+                    // Ultra-fast fallback - minimal options
+                    console.log(`[${new Date().toISOString()}] Trying ultra-fast fallback...`);
+                    throw new Error(`Failed to send ${statusType} status - WPP.chat not available`);
+
+                } catch (error) {
+                    console.error(`Error in direct status sending:`, error.message);
+                    throw new Error(`Failed to send ${statusType} status: ${error.message}`);
+                }
+            }, { statusType: type, statusContent: content, statusOptions: options });
+
             return result;
 
         } catch (error) {
-            console.error('Error sending text status:', error.message);
+            console.error(`[${new Date().toISOString()}] ERROR sending ${type} status:`, error.message);
             throw error;
         }
+    }
+
+    async sendTextStatus(content, options = {}) {
+        return this.sendStatus('text', content, options);
     }
 
     async sendVideoStatus(content, options = {}) {
-        console.log('Sending video status...', content, options);
-
-        try {
-            // Wait until WA-JS is fully ready
-            await this.page.waitForFunction(() => {
-                return typeof window.WPP !== 'undefined' &&
-                       window.WPP.isFullReady &&
-                       window.WPP.status &&
-                       typeof window.WPP.status.sendVideoStatus === 'function';
-            }, { timeout: 20000 }); // 20s max wait for full initialization
-
-            console.log('WA-JS is fully ready with status functions...');
-
-            // Click Status button using helper function
-            await this.clickStatusButton();
-
-            // Send video status using WA-JS
-            const result = await this.page.evaluate(async ({ videoContent, videoOptions }) => {
-                try {
-                    // Check if WPP.status is available
-                    if (!window.WPP || !window.WPP.status || !window.WPP.status.sendVideoStatus) {
-                        throw new Error('WPP.status.sendVideoStatus is not available');
-                    }
-
-                    console.log('Sending video status with WA-JS...', { videoContent, videoOptions });
-
-                    // Try to send the status
-                    const result = await window.WPP.status.sendVideoStatus(videoContent, videoOptions);
-                    console.log('Video status sent successfully:', result);
-
-                    return result;
-                } catch (error) {
-                    console.error('WA-JS sendVideoStatus error:', error);
-
-                    // If WA-JS method fails, try alternative approach
-                    try {
-                        console.log('Trying alternative video status method...');
-
-                        // Alternative: Use file message method
-                        if (window.WPP.chat && window.WPP.chat.sendFileMessage) {
-                            const statusResult = await window.WPP.chat.sendFileMessage('status@broadcast', videoContent, {
-                                ...videoOptions,
-                                type: 'video',
-                                createChat: true
-                            });
-
-                            console.log('Alternative video method succeeded:', statusResult);
-                            return statusResult;
-                        }
-                    } catch (altError) {
-                        console.error('Alternative video method also failed:', altError);
-                    }
-
-                    throw new Error(`Failed to send video status: ${error.message}`);
-                }
-            }, { videoContent: content, videoOptions: options });
-
-            console.log('Video status sent successfully:', result);
-            return result;
-
-        } catch (error) {
-            console.error('Error sending video status:', error.message);
-            throw error;
-        }
+        return this.sendStatus('video', content, options);
     }
 
     async sendImageStatus(content, options = {}) {
-        console.log('Sending image status...');
-
-        try {
-            // Wait until WA-JS is fully ready
-            await this.page.waitForFunction(() => {
-                return typeof window.WPP !== 'undefined' &&
-                       window.WPP.isFullReady &&
-                       window.WPP.status &&
-                       typeof window.WPP.status.sendImageStatus === 'function';
-            }, { timeout: 20000 }); // 20s max wait for full initialization
-
-            console.log('WA-JS is fully ready with status functions...');
-
-            // Click Status button using helper function
-            await this.clickStatusButton();
-
-            // Send image status using WA-JS
-            const result = await this.page.evaluate(async ({ imageContent, imageOptions }) => {
-                try {
-                    // Check if WPP.status is available
-                    if (!window.WPP || !window.WPP.status || !window.WPP.status.sendImageStatus) {
-                        throw new Error('WPP.status.sendImageStatus is not available');
-                    }
-
-                    console.log('Sending image status with WA-JS...', { imageContent, imageOptions });
-
-                    // Try to send the status
-                    const result = await window.WPP.status.sendImageStatus(imageContent, imageOptions);
-                    console.log('Image status sent successfully:', result);
-
-                    return result;
-                } catch (error) {
-                    console.error('WA-JS sendImageStatus error:', error);
-
-                    // If WA-JS method fails, try alternative approach
-                    try {
-                        console.log('Trying alternative image status method...');
-
-                        // Alternative: Use file message method
-                        if (window.WPP.chat && window.WPP.chat.sendFileMessage) {
-                            const statusResult = await window.WPP.chat.sendFileMessage('status@broadcast', imageContent, {
-                                ...imageOptions,
-                                type: 'image',
-                                createChat: true
-                            });
-
-                            console.log('Alternative image method succeeded:', statusResult);
-                            return statusResult;
-                        }
-                    } catch (altError) {
-                        console.error('Alternative image method also failed:', altError);
-                    }
-
-                    throw new Error(`Failed to send image status: ${error.message}`);
-                }
-            }, { imageContent: content, imageOptions: options });
-
-            console.log('Image status sent successfully:', result);
-            return result;
-
-        } catch (error) {
-            console.error('Error sending image status:', error.message);
-            throw error;
-        }
+        return this.sendStatus('image', content, options);
     }
 
+    // Legacy function - now uses the fast direct method
     async manualSendTextStatus(content, options = {}) {
-        console.log('Manually sending text status through UI...');
-
-        try {
-            // Step 1: Check if WhatsApp is ready and authenticated
-            const isReady = await this.page.evaluate(() => {
-                // Check if WA-JS is ready
-                const wppReady = typeof window.WPP !== 'undefined' && window.WPP.isFullReady;
-                return { wppReady };
-            });
-
-            if (!isReady.wppReady) {
-                throw new Error('WhatsApp Web is not ready');
-            }
-
-            
-            await this.page.waitForTimeout(1000); // Wait for UI to load
-
-            // Step 2: Click on Status button using helper function
-            await this.clickStatusButton();
-        //     await this.page.waitForTimeout(1000); // Wait for UI to load
-
-        //     // Step 3: Click on "Add Status" button
-        //     console.log('Clicking Add Status button...');
-        //     const addStatusButton = await this.page.locator('div[aria-label="Add Status"]').first();
-        //     if (!await addStatusButton.isVisible()) {
-        //         throw new Error('Add Status button not found');
-        //     }
-        //     await addStatusButton.click();
-        //     await this.page.waitForTimeout(1000); // Wait for menu to appear
-
-        //     // Step 4: Click on Text option (look for the pencil icon and "Text" span)
-        //     console.log('Selecting Text status option...');
-
-        //     // Try multiple selectors to find the Text option
-        //     const textOption = await this.page.locator('div').filter({
-        //         has: this.page.locator('span[data-icon="pencil-refreshed"]')
-        //     }).filter({
-        //         hasText: 'Text'
-        //     }).first();
-
-        //     if (await textOption.isVisible()) {
-        //         await textOption.click();
-        //     } else {
-        //         // Fallback: try clicking by text content
-        //         const textSpan = await this.page.locator('span:has-text("Text")').first();
-        //         if (await textSpan.isVisible()) {
-        //             await textSpan.click();
-        //         } else {
-        //             throw new Error('Text status option not found');
-        //         }
-        //     }
-
-        //     await this.page.waitForTimeout(1500); // Wait for text input to appear
-
-        //     // Step 5: Type the status text
-        //     console.log('Typing status text...');
-
-        //     // Find the text input field (usually a contenteditable div)
-        //     const textInput = await this.page.locator('[contenteditable="true"]').first();
-        //     if (!await textInput.isVisible()) {
-        //         throw new Error('Text input field not found');
-        //     }
-
-        //     await textInput.click();
-        //     await textInput.fill(content);
-        //     await this.page.waitForTimeout(500);
-
-        //     // Step 6: Apply formatting options if provided
-        //     if (options.backgroundColor || options.font) {
-        //         console.log('Applying formatting options...');
-
-        //         // Background color selection (if available)
-        //         if (options.backgroundColor) {
-        //             const colorPalette = await this.page.locator('[aria-label*="background"]').first();
-        //             if (await colorPalette.isVisible()) {
-        //                 await colorPalette.click();
-        //                 // Select color based on options.backgroundColor
-        //                 await this.page.waitForTimeout(500);
-        //             }
-        //         }
-
-        //         // Font selection (if available)
-        //         if (options.font) {
-        //             const fontButton = await this.page.locator('[aria-label*="font"]').first();
-        //             if (await fontButton.isVisible()) {
-        //                 await fontButton.click();
-        //                 await this.page.waitForTimeout(500);
-        //             }
-        //         }
-        //     }
-
-        //     // Step 7: Click Send/Post button
-        //     console.log('Posting status...');
-
-        //     // Look for send button (usually has a send icon or "Send" text)
-        //     const sendButton = await this.page.locator('[aria-label*="Send"], [aria-label*="Post"], button:has-text("Send"), button:has-text("Post")').first();
-
-        //     if (!await sendButton.isVisible()) {
-        //         // Try alternative selector for send button
-        //         const alternativeSend = await this.page.locator('[data-icon="send"]').first();
-        //         if (await alternativeSend.isVisible()) {
-        //             await alternativeSend.click();
-        //         } else {
-        //             throw new Error('Send button not found');
-        //         }
-        //     } else {
-        //         await sendButton.click();
-        //     }
-
-        //     await this.page.waitForTimeout(2000); // Wait for status to be posted
-
-        //     console.log('Text status posted successfully via UI');
-
-        //     return {
-        //         success: true,
-        //         message: 'Text status posted successfully',
-        //         content: content,
-        //         method: 'manual_ui'
-        //     };
-
-        } catch (error) {
-            console.error('Error manually sending text status:', error.message);
-
-            // Try to go back to main screen if we're stuck in status creation
-            try {
-                const backButton = await this.page.locator('[aria-label*="Back"], [data-icon="back"]').first();
-                if (await backButton.isVisible()) {
-                    await backButton.click();
-                }
-            } catch (backError) {
-                console.log('Could not navigate back:', backError.message);
-            }
-
-            throw error;
-        }
+        return this.sendTextStatus(content, options);
     }
 
     async removeStatus(msgId) {
@@ -763,19 +553,67 @@ class WhatsAppStatusHandler {
         }
     }
 
+    // Helper function to get viewer information for a message
+    async getMsgViewerInfo(msg) {
+        return await this.page.evaluate(async (message) => {
+            let viewerInfo = {
+                viewers: [],
+                viewCount: 0,
+                readReceipts: []
+            };
+
+            try {
+                // Try to get MsgInfo which contains read receipts
+                if (window.WPP?.whatsapp?.MsgInfoStore) {
+                    const msgInfo = window.WPP.whatsapp.MsgInfoStore.get(message.id);
+                    if (msgInfo) {
+                        // Get read by list (people who viewed the status)
+                        if (msgInfo.readBy?.length > 0) {
+                            viewerInfo.readReceipts = msgInfo.readBy.map(r => ({
+                                id: r.id ? r.id.toString() : r.toString(),
+                                timestamp: r.t || r.timestamp
+                            }));
+                            viewerInfo.viewers = msgInfo.readBy.map(r => r.id ? r.id.toString() : r.toString());
+                            viewerInfo.viewCount = msgInfo.readBy.length;
+                        } else if (msgInfo.reads?.length > 0) {
+                            viewerInfo.readReceipts = msgInfo.reads.map(r => ({
+                                id: r.id ? r.id.toString() : r.toString(),
+                                timestamp: r.t || r.timestamp
+                            }));
+                            viewerInfo.viewers = msgInfo.reads.map(r => r.id ? r.id.toString() : r.toString());
+                            viewerInfo.viewCount = msgInfo.reads.length;
+                        }
+                    }
+                }
+
+                // Check msgInfoCache as fallback
+                if (!viewerInfo.viewCount && message.msgInfoCache?.readBy?.length > 0) {
+                    viewerInfo.readReceipts = message.msgInfoCache.readBy;
+                    viewerInfo.viewers = message.msgInfoCache.readBy.map(r => r.id || r);
+                    viewerInfo.viewCount = message.msgInfoCache.readBy.length;
+                }
+
+                // Check ACK level (3 = read/viewed)
+                if (!viewerInfo.viewCount && message.ack >= 3) {
+                    viewerInfo.viewCount = -1; // Indicates viewed but count unknown
+                }
+            } catch (error) {
+                console.log('Error getting viewer info:', error.message);
+            }
+
+            return viewerInfo;
+        }, msg);
+    }
+
     async getMyStatus() {
         console.log('Getting my status...');
 
         try {
-            // Wait until WA-JS is fully ready
-            await this.page.waitForFunction(() => {
-                return typeof window.WPP !== 'undefined' &&
-                    window.WPP.isFullReady &&
-                    window.WPP.status &&
-                    typeof window.WPP.status.sendImageStatus === 'function';
-            }, { timeout: 20000 }); // 20s max wait for full initialization
+            // Wait for WA-JS to be ready
+            await this.waitForWAJS();
 
-            await this.clickStatusButton();
+            // Only click status button if it's actually needed for the operation
+            // For just reading status data, we don't need to click the UI button
 
 
             const myStatusRaw = await this.page.evaluate(async () => {

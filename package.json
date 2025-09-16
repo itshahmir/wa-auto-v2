@@ -28,6 +28,7 @@
     "express-session": "^1.18.2",
     "file-type": "~16.5.4",
     "helmet": "^7.1.0",
+    "https-proxy-agent": "^7.0.6",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "playwright": "^1.55.0",

@@ -126,7 +126,7 @@
     <header class="border-b border-border">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold">WhatsApp Automation</h1>
+                <h1 class="text-2xl font-bold">SocialCRM</h1>
                 <div class="flex items-center gap-4">
                     <span id="serverStatus" class="text-sm text-muted-foreground flex items-center gap-2">
                         <span class="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -140,9 +140,28 @@
         </div>
     </header>
 
+    <!-- Navigation Tabs -->
+    <nav class="border-b border-border bg-card">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-8">
+                <button class="nav-tab py-4 px-2 border-b-2 border-primary font-medium text-sm text-foreground" data-tab="sessions">
+                    Sessions
+                </button>
+                <button class="nav-tab py-4 px-2 border-b-2 border-transparent font-medium text-sm text-muted-foreground hover:text-foreground hover:border-muted transition-colors" data-tab="proxies">
+                    Proxy Management
+                </button>
+                <button class="nav-tab py-4 px-2 border-b-2 border-transparent font-medium text-sm text-muted-foreground hover:text-foreground hover:border-muted transition-colors" data-tab="system">
+                    System Info
+                </button>
+            </div>
+        </div>
+    </nav>
+
     <!-- Main Container -->
     <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Sessions Tab -->
+        <div id="sessionsTab" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Sessions Panel -->
             <div class="lg:col-span-1">
                 <div class="bg-card rounded-lg border border-border p-6">
@@ -430,6 +449,186 @@
             </div>
         </div>
             </div>
+        </div>
+
+        <!-- Proxy Management Tab -->
+        <div id="proxiesTab" class="tab-content hidden">
+            <div class="space-y-6">
+                <!-- Proxy Statistics -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-card rounded-lg border border-border p-4">
+                        <div class="text-sm text-muted-foreground">Total Proxies</div>
+                        <div class="text-2xl font-bold" id="totalProxies">0</div>
+                    </div>
+                    <div class="bg-card rounded-lg border border-border p-4">
+                        <div class="text-sm text-muted-foreground">Healthy</div>
+                        <div class="text-2xl font-bold text-green-500" id="healthyProxies">0</div>
+                    </div>
+                    <div class="bg-card rounded-lg border border-border p-4">
+                        <div class="text-sm text-muted-foreground">Degraded</div>
+                        <div class="text-2xl font-bold text-yellow-500" id="degradedProxies">0</div>
+                    </div>
+                    <div class="bg-card rounded-lg border border-border p-4">
+                        <div class="text-sm text-muted-foreground">Unhealthy</div>
+                        <div class="text-2xl font-bold text-red-500" id="unhealthyProxies">0</div>
+                    </div>
+                </div>
+
+                <!-- Proxy Management Actions -->
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <h2 class="text-lg font-semibold mb-4">Proxy Management</h2>
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <button id="addProxyBtn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                            Add Single Proxy
+                        </button>
+                        <button id="bulkImportBtn" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                            Bulk Import
+                        </button>
+                        <button id="importFromFileBtn" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                            Import from proxies.txt
+                        </button>
+                        <button id="healthCheckAllBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                            Check All Health
+                        </button>
+                        <button id="refreshProxiesBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                            Refresh List
+                        </button>
+                    </div>
+
+                    <!-- Proxy Filter -->
+                    <div class="flex gap-3 mb-4">
+                        <select id="proxyStatusFilter" class="px-3 py-2 bg-input border border-border rounded-md text-sm">
+                            <option value="">All Statuses</option>
+                            <option value="healthy">Healthy</option>
+                            <option value="degraded">Degraded</option>
+                            <option value="unhealthy">Unhealthy</option>
+                            <option value="unchecked">Unchecked</option>
+                        </select>
+                        <input type="text" id="proxySearchInput" placeholder="Search proxies..." class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-sm">
+                    </div>
+                </div>
+
+                <!-- Proxy List -->
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Proxy List</h3>
+                        <div class="text-sm text-muted-foreground" id="proxyCount">0 proxies</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-border">
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Host:Port</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Status</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Response Time</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Assignments</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Last Check</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proxiesTableBody">
+                                <!-- Proxy entries will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Proxy Assignments -->
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <h3 class="text-lg font-semibold mb-4">Active Proxy Assignments</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-border">
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">User ID</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Proxy</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Assigned</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Last Rotation</th>
+                                    <th class="text-left py-2 text-sm font-medium text-muted-foreground">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsTableBody">
+                                <!-- Assignment entries will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Info Tab -->
+        <div id="systemTab" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <h2 class="text-lg font-semibold mb-4">System Statistics</h2>
+                    <div id="systemStats" class="space-y-4">
+                        <!-- System stats will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Proxy Modal -->
+    <div id="addProxyModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-slide-down">
+            <h2 class="text-xl font-semibold mb-4">Add Proxy</h2>
+            <form id="addProxyForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Proxy String</label>
+                        <input type="text" id="proxyString" placeholder="username:password@host:port"
+                               class="w-full px-3 py-2 bg-input border border-border rounded-md" required>
+                        <div class="text-xs text-muted-foreground mt-1">Format: username:password@host:port</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tags (optional)</label>
+                        <input type="text" id="proxyTags" placeholder="tag1,tag2,tag3"
+                               class="w-full px-3 py-2 bg-input border border-border rounded-md">
+                        <div class="text-xs text-muted-foreground mt-1">Comma-separated tags</div>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                        <span class="btn-text">Add Proxy</span>
+                    </button>
+                    <button type="button" id="closeAddProxyModal" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div id="bulkImportModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-card rounded-lg border border-border p-6 w-full max-w-2xl animate-slide-down">
+            <h2 class="text-xl font-semibold mb-4">Bulk Import Proxies</h2>
+            <form id="bulkImportForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Proxy List</label>
+                        <textarea id="proxyList" rows="10" placeholder="One proxy per line:
+username1:password1@host1:port1
+username2:password2@host2:port2"
+                                  class="w-full px-3 py-2 bg-input border border-border rounded-md text-sm font-mono" required></textarea>
+                        <div class="text-xs text-muted-foreground mt-1">One proxy per line in format: username:password@host:port</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tags (optional)</label>
+                        <input type="text" id="bulkProxyTags" placeholder="tag1,tag2,tag3"
+                               class="w-full px-3 py-2 bg-input border border-border rounded-md">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                        <span class="btn-text">Import Proxies</span>
+                    </button>
+                    <button type="button" id="closeBulkImportModal" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

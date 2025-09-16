@@ -1147,6 +1147,565 @@ document.getElementById('refreshStatusBtn').addEventListener('click', async (e) 
     setButtonLoading(button, false);
 });
 
+// ============================================
+// Tab Navigation
+// ============================================
+
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', () => {
+    // Handle tab switching
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+
+            // Update nav tabs
+            navTabs.forEach(t => {
+                t.classList.remove('border-primary', 'text-foreground');
+                t.classList.add('border-transparent', 'text-muted-foreground');
+            });
+            tab.classList.remove('border-transparent', 'text-muted-foreground');
+            tab.classList.add('border-primary', 'text-foreground');
+
+            // Update tab content
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${targetTab}Tab`).classList.remove('hidden');
+
+            // Load data for specific tabs
+            if (targetTab === 'proxies') {
+                loadProxies();
+                loadProxyStatistics();
+                loadProxyAssignments();
+            } else if (targetTab === 'system') {
+                loadSystemStats();
+            }
+        });
+    });
+});
+
+// ============================================
+// Proxy Management
+// ============================================
+
+let proxies = [];
+let filteredProxies = [];
+
+// Load proxy statistics
+async function loadProxyStatistics() {
+    try {
+        const response = await fetch('/proxies/statistics');
+        const stats = await response.json();
+
+        // Check if elements exist before updating
+        const totalProxiesEl = document.getElementById('totalProxies');
+        const healthyProxiesEl = document.getElementById('healthyProxies');
+        const degradedProxiesEl = document.getElementById('degradedProxies');
+        const unhealthyProxiesEl = document.getElementById('unhealthyProxies');
+
+        if (totalProxiesEl) totalProxiesEl.textContent = stats.proxies.total || 0;
+        if (healthyProxiesEl) healthyProxiesEl.textContent = stats.proxies.healthy || 0;
+        if (degradedProxiesEl) degradedProxiesEl.textContent = stats.proxies.degraded || 0;
+        if (unhealthyProxiesEl) unhealthyProxiesEl.textContent = stats.proxies.unhealthy || 0;
+    } catch (error) {
+        console.error('Failed to load proxy statistics:', error);
+    }
+}
+
+// Load proxies
+async function loadProxies() {
+    try {
+        const response = await fetch('/proxies');
+        const result = await response.json();
+        proxies = result.proxies || [];
+
+        // Apply current filter
+        applyProxyFilters();
+        renderProxies();
+
+        const proxyCountEl = document.getElementById('proxyCount');
+        if (proxyCountEl) {
+            proxyCountEl.textContent = `${filteredProxies.length} proxies`;
+        }
+    } catch (error) {
+        console.error('Failed to load proxies:', error);
+        showToast('Failed to load proxies', 'error');
+    }
+}
+
+// Apply filters to proxies
+function applyProxyFilters() {
+    const statusFilterEl = document.getElementById('proxyStatusFilter');
+    const searchInputEl = document.getElementById('proxySearchInput');
+
+    const statusFilter = statusFilterEl ? statusFilterEl.value : '';
+    const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+
+    filteredProxies = proxies.filter(proxy => {
+        const matchesStatus = !statusFilter || proxy.status === statusFilter;
+        const matchesSearch = !searchTerm ||
+            `${proxy.host}:${proxy.port}`.toLowerCase().includes(searchTerm) ||
+            (proxy.tags && proxy.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
+
+        return matchesStatus && matchesSearch;
+    });
+}
+
+// Render proxies table
+function renderProxies() {
+    const tbody = document.getElementById('proxiesTableBody');
+    tbody.innerHTML = '';
+
+    if (filteredProxies.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-8 text-muted-foreground">
+                    No proxies found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    filteredProxies.forEach(proxy => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-border hover:bg-muted/50';
+
+        const statusColor = {
+            healthy: 'bg-green-500',
+            degraded: 'bg-yellow-500',
+            unhealthy: 'bg-red-500',
+            unchecked: 'bg-gray-500'
+        }[proxy.status] || 'bg-gray-500';
+
+        const lastCheck = proxy.health?.lastChecked ?
+            new Date(proxy.health.lastChecked).toLocaleString() : 'Never';
+
+        const responseTime = proxy.health?.responseTime ?
+            `${proxy.health.responseTime}ms` : 'N/A';
+
+        row.innerHTML = `
+            <td class="py-3 text-sm">
+                <div class="font-mono">${proxy.host}:${proxy.port}</div>
+                ${proxy.tags && proxy.tags.length > 0 ?
+                    `<div class="text-xs text-muted-foreground">${proxy.tags.join(', ')}</div>` : ''}
+            </td>
+            <td class="py-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full ${statusColor}"></span>
+                    <span class="text-sm capitalize">${proxy.status}</span>
+                </div>
+            </td>
+            <td class="py-3 text-sm">${responseTime}</td>
+            <td class="py-3 text-sm">${proxy.usage?.currentAssignments || 0}</td>
+            <td class="py-3 text-sm text-muted-foreground">${lastCheck}</td>
+            <td class="py-3">
+                <div class="flex gap-2">
+                    <button onclick="checkProxyHealth('${proxy.id}')"
+                            class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                        Check
+                    </button>
+                    <button onclick="removeProxy('${proxy.id}')"
+                            class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                        Remove
+                    </button>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+// Load proxy assignments
+async function loadProxyAssignments() {
+    try {
+        const response = await fetch('/proxy-assignments');
+        const result = await response.json();
+        const assignments = result.assignments || [];
+
+        renderAssignments(assignments);
+    } catch (error) {
+        console.error('Failed to load proxy assignments:', error);
+    }
+}
+
+// Render proxy assignments table
+function renderAssignments(assignments) {
+    const tbody = document.getElementById('assignmentsTableBody');
+    tbody.innerHTML = '';
+
+    const activeAssignments = assignments.filter(a => a.status === 'active');
+
+    if (activeAssignments.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-8 text-muted-foreground">
+                    No active assignments
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    activeAssignments.forEach(assignment => {
+        const proxy = proxies.find(p => p.id === assignment.proxyId);
+        const proxyDisplay = proxy ? `${proxy.host}:${proxy.port}` : 'Unknown';
+
+        const row = document.createElement('tr');
+        row.className = 'border-b border-border hover:bg-muted/50';
+
+        row.innerHTML = `
+            <td class="py-3 text-sm font-mono">${assignment.userId}</td>
+            <td class="py-3 text-sm font-mono">${proxyDisplay}</td>
+            <td class="py-3 text-sm text-muted-foreground">
+                ${new Date(assignment.assignedAt).toLocaleString()}
+            </td>
+            <td class="py-3 text-sm text-muted-foreground">
+                ${new Date(assignment.lastRotation).toLocaleString()}
+            </td>
+            <td class="py-3">
+                <button onclick="rotateUserProxy('${assignment.userId}')"
+                        class="px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors">
+                    Rotate
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+// Check specific proxy health
+async function checkProxyHealth(proxyId) {
+    try {
+        showToast('Checking proxy health...', 'info');
+        const response = await fetch(`/proxies/${proxyId}/health-check`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Health check passed', 'success');
+        } else {
+            showToast('Health check failed', 'warning');
+        }
+
+        // Refresh proxies and stats
+        await loadProxies();
+        await loadProxyStatistics();
+    } catch (error) {
+        console.error('Failed to check proxy health:', error);
+        showToast('Failed to check proxy health', 'error');
+    }
+}
+
+// Remove proxy
+async function removeProxy(proxyId) {
+    if (!confirm('Are you sure you want to remove this proxy?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/proxies/${proxyId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showToast('Proxy removed successfully', 'success');
+            await loadProxies();
+            await loadProxyStatistics();
+            await loadProxyAssignments();
+        } else {
+            showToast('Failed to remove proxy', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to remove proxy:', error);
+        showToast('Failed to remove proxy', 'error');
+    }
+}
+
+// Rotate user proxy
+async function rotateUserProxy(userId) {
+    try {
+        showToast('Rotating proxy...', 'info');
+        const response = await fetch(`/users/${userId}/proxy/rotate`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showToast('Proxy rotated successfully', 'success');
+            await loadProxyAssignments();
+        } else {
+            showToast('Failed to rotate proxy', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to rotate proxy:', error);
+        showToast('Failed to rotate proxy', 'error');
+    }
+}
+
+// Load system statistics
+async function loadSystemStats() {
+    try {
+        const response = await fetch('/health');
+        const stats = await response.json();
+
+        const systemStatsDiv = document.getElementById('systemStats');
+        systemStatsDiv.innerHTML = `
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <div class="text-sm text-muted-foreground">Total Users</div>
+                    <div class="text-xl font-bold">${stats.totalUsers || 0}</div>
+                </div>
+                <div>
+                    <div class="text-sm text-muted-foreground">Active Sessions</div>
+                    <div class="text-xl font-bold">${stats.activeSessions || 0}</div>
+                </div>
+                <div>
+                    <div class="text-sm text-muted-foreground">Total Sessions</div>
+                    <div class="text-xl font-bold">${stats.totalSessions || 0}</div>
+                </div>
+                <div>
+                    <div class="text-sm text-muted-foreground">Uptime</div>
+                    <div class="text-xl font-bold">${Math.floor((stats.uptime || 0) / 60)} min</div>
+                </div>
+                ${stats.proxies ? `
+                    <div>
+                        <div class="text-sm text-muted-foreground">Total Proxies</div>
+                        <div class="text-xl font-bold">${stats.proxies.total || 0}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted-foreground">Healthy Proxies</div>
+                        <div class="text-xl font-bold text-green-500">${stats.proxies.healthy || 0}</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load system stats:', error);
+    }
+}
+
+// ============================================
+// Proxy Management Event Handlers
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Proxy filter handlers - add after a delay to ensure elements exist
+    setTimeout(() => {
+        const statusFilter = document.getElementById('proxyStatusFilter');
+        const searchInput = document.getElementById('proxySearchInput');
+
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => {
+                applyProxyFilters();
+                renderProxies();
+                const proxyCountEl = document.getElementById('proxyCount');
+                if (proxyCountEl) {
+                    proxyCountEl.textContent = `${filteredProxies.length} proxies`;
+                }
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                applyProxyFilters();
+                renderProxies();
+                const proxyCountEl = document.getElementById('proxyCount');
+                if (proxyCountEl) {
+                    proxyCountEl.textContent = `${filteredProxies.length} proxies`;
+                }
+            });
+        }
+    }, 100);
+
+    // Add proxy button
+    setTimeout(() => {
+        const addProxyBtn = document.getElementById('addProxyBtn');
+        const closeAddProxyModal = document.getElementById('closeAddProxyModal');
+        const addProxyModal = document.getElementById('addProxyModal');
+        const addProxyForm = document.getElementById('addProxyForm');
+
+        if (addProxyBtn && addProxyModal) {
+            addProxyBtn.addEventListener('click', () => {
+                addProxyModal.classList.remove('hidden');
+            });
+        }
+
+        if (closeAddProxyModal && addProxyModal && addProxyForm) {
+            closeAddProxyModal.addEventListener('click', () => {
+                addProxyModal.classList.add('hidden');
+                addProxyForm.reset();
+            });
+        }
+    }, 100);
+
+    // Add proxy form submit - with delay to ensure element exists
+    setTimeout(() => {
+        const addProxyForm = document.getElementById('addProxyForm');
+        if (addProxyForm) {
+            addProxyForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const button = e.target.querySelector('button[type="submit"]');
+                setButtonLoading(button, true, 'Adding...');
+
+                const proxyString = document.getElementById('proxyString').value;
+                const tags = document.getElementById('proxyTags').value
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t);
+
+                try {
+                    const response = await fetch('/proxies', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ proxy: proxyString, tags })
+                    });
+
+                    if (response.ok) {
+                        showToast('Proxy added successfully', 'success');
+                        const modal = document.getElementById('addProxyModal');
+                        const form = document.getElementById('addProxyForm');
+                        if (modal) modal.classList.add('hidden');
+                        if (form) form.reset();
+                        await loadProxies();
+                        await loadProxyStatistics();
+                    } else {
+                        const error = await response.json();
+                        showToast(error.error || 'Failed to add proxy', 'error');
+                    }
+                } catch (error) {
+                    console.error('Failed to add proxy:', error);
+                    showToast('Failed to add proxy', 'error');
+                }
+
+                setButtonLoading(button, false);
+            });
+        }
+    }, 100);
+
+    // Bulk import button
+    document.getElementById('bulkImportBtn').addEventListener('click', () => {
+        document.getElementById('bulkImportModal').classList.remove('hidden');
+    });
+
+    // Close bulk import modal
+    document.getElementById('closeBulkImportModal').addEventListener('click', () => {
+        document.getElementById('bulkImportModal').classList.add('hidden');
+        document.getElementById('bulkImportForm').reset();
+    });
+
+    // Bulk import form submit
+    document.getElementById('bulkImportForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const button = e.target.querySelector('button[type="submit"]');
+        setButtonLoading(button, true, 'Importing...');
+
+        const proxyList = document.getElementById('proxyList').value
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line);
+
+        const tags = document.getElementById('bulkProxyTags').value
+            .split(',')
+            .map(t => t.trim())
+            .filter(t => t);
+
+        try {
+            const response = await fetch('/proxies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ proxies: proxyList, tags })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                showToast(`Import complete: ${result.result.added} added, ${result.result.errors.length} errors`, 'success');
+                document.getElementById('bulkImportModal').classList.add('hidden');
+                document.getElementById('bulkImportForm').reset();
+                await loadProxies();
+                await loadProxyStatistics();
+            } else {
+                const error = await response.json();
+                showToast(error.error || 'Failed to import proxies', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to import proxies:', error);
+            showToast('Failed to import proxies', 'error');
+        }
+
+        setButtonLoading(button, false);
+    });
+
+    // Import from file button
+    document.getElementById('importFromFileBtn').addEventListener('click', async () => {
+        const button = document.getElementById('importFromFileBtn');
+        setButtonLoading(button, true, 'Importing...');
+
+        try {
+            const response = await fetch('/proxies/import/file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filePath: '/home/ubuntu/wa-auto-v2/proxies.txt' })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                showToast(`Import complete: ${result.result.added} added, ${result.result.errors.length} errors`, 'success');
+                await loadProxies();
+                await loadProxyStatistics();
+            } else {
+                const error = await response.json();
+                showToast(error.error || 'Failed to import from file', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to import from file:', error);
+            showToast('Failed to import from file', 'error');
+        }
+
+        setButtonLoading(button, false);
+    });
+
+    // Health check all button
+    document.getElementById('healthCheckAllBtn').addEventListener('click', async () => {
+        const button = document.getElementById('healthCheckAllBtn');
+        setButtonLoading(button, true, 'Checking...');
+
+        try {
+            const response = await fetch('/proxies/health-check', { method: 'POST' });
+            if (response.ok) {
+                const result = await response.json();
+                showToast(`Health check complete: ${result.results.healthy} healthy, ${result.results.unhealthy} unhealthy`, 'success');
+                await loadProxies();
+                await loadProxyStatistics();
+            } else {
+                showToast('Failed to run health checks', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to run health checks:', error);
+            showToast('Failed to run health checks', 'error');
+        }
+
+        setButtonLoading(button, false);
+    });
+
+    // Refresh proxies button
+    document.getElementById('refreshProxiesBtn').addEventListener('click', async () => {
+        const button = document.getElementById('refreshProxiesBtn');
+        setButtonLoading(button, true, 'Refreshing...');
+
+        await loadProxies();
+        await loadProxyStatistics();
+        await loadProxyAssignments();
+
+        setButtonLoading(button, false);
+    });
+});
+
 // Initialize
 async function init() {
     await checkServerStatus();
