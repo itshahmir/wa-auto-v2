@@ -1,5 +1,0 @@
-brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.7.22:ub81zf14rl7k@brd.superproxy.io:33335
-brd-customer-hl_9c654804-zone-isp_proxy1-ip-168.158.95.66:ub81zf14rl7k@brd.superproxy.io:33335
-brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.84.60:ub81zf14rl7k@brd.superproxy.io:33335
-brd-customer-hl_9c654804-zone-isp_proxy1-ip-213.109.191.153:ub81zf14rl7k@brd.superproxy.io:33335
-brd-customer-hl_9c654804-zone-isp_proxy1-ip-66.17.239.26:ub81zf14rl7k@brd.superproxy.io:33335

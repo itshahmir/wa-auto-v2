@@ -1,8 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const fileUpload = require('express-fileupload');
 const { SessionManager } = require('../core/SessionManager');
-const WhatsAppStatusHandler = require('../core/StatusHandler');
+const WebSocketStatusHandler = require('../core/WebSocketStatusHandler');
 require('dotenv').config();
 
 // ============================================
@@ -13,6 +14,11 @@ class WhatsAppAPI {
         this.app = express();
         this.port = port;
         this.sessionManager = new SessionManager('./data/whatsapp.db.json');
+
+        // Baileys status handlers for direct WebSocket (separate from main system)
+        this.baileysHandlers = new Map();
+        this.baileysQRCodes = new Map();
+
         this.setupMiddleware();
         this.setupRoutes();
 
@@ -57,6 +63,13 @@ class WhatsAppAPI {
         this.app.use(express.urlencoded({ extended: true, limit: '100mb' }));
         this.app.use(bodyParser.json({ limit: '100mb' }));
         this.app.use(bodyParser.urlencoded({ extended: true, limit: '100mb', parameterLimit: 50000 }));
+
+        // File upload middleware
+        this.app.use(fileUpload({
+            limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+            useTempFiles: false,
+            tempFileDir: '/tmp/'
+        }));
 
         // CORS
         this.app.use((req, res, next) => {
@@ -119,6 +132,265 @@ class WhatsAppAPI {
 
         this.app.get('/check-auth', (req, res) => {
             res.json({ authenticated: !!req.session.authenticated });
+        });
+
+        // ============================================
+        // BAILEYS DIRECT WEBSOCKET ENDPOINTS (NO BROWSER)
+        // ============================================
+
+        // Connect Baileys for user
+        this.app.post('/baileys/connect/:userId', async (req, res) => {
+            const { userId } = req.params;
+
+            try {
+                // Check if already connected
+                if (this.baileysHandlers.has(userId)) {
+                    const handler = this.baileysHandlers.get(userId);
+                    const status = handler.getStatus();
+                    return res.json({
+                        success: true,
+                        message: 'Already connected',
+                        status: status
+                    });
+                }
+
+                // TODO: Baileys handler functionality temporarily disabled
+                /*
+                // Create new Baileys handler
+                const handler = new BaileysStatusHandler(userId);
+
+                // Set event handlers
+                handler.setEventHandlers({
+                    onQRCode: (qr) => {
+                        this.baileysQRCodes.set(userId, qr);
+                        console.log(`[Baileys-${userId}] QR Code ready for scanning`);
+                    },
+                    onConnected: () => {
+                        console.log(`[Baileys-${userId}] Successfully connected via WebSocket`);
+                    },
+                    onDisconnected: () => {
+                        console.log(`[Baileys-${userId}] Disconnected`);
+                        this.baileysHandlers.delete(userId);
+                        this.baileysQRCodes.delete(userId);
+                    }
+                });
+
+                // Store handler
+                this.baileysHandlers.set(userId, handler);
+
+                // Start connection
+                const connected = await handler.connect();
+
+                if (connected) {
+                    res.json({
+                        success: true,
+                        message: 'Baileys connection initiated',
+                        userId: userId,
+                        needsAuth: !handler.isAuthenticated
+                    });
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        error: 'Failed to initiate Baileys connection'
+                    });
+                }
+                */
+
+                // Temporary response while Baileys is disabled
+                res.status(501).json({
+                    success: false,
+                    error: 'Baileys functionality temporarily disabled'
+                });
+
+            } catch (error) {
+                console.error(`[Baileys-${userId}] Connection error:`, error.message);
+                res.status(500).json({
+                    success: false,
+                    error: `Baileys connection failed: ${error.message}`
+                });
+            }
+        });
+
+        // Get QR code for Baileys authentication
+        this.app.get('/baileys/qr/:userId', (req, res) => {
+            const { userId } = req.params;
+
+            if (this.baileysQRCodes.has(userId)) {
+                const qr = this.baileysQRCodes.get(userId);
+                res.json({
+                    success: true,
+                    qr: qr,
+                    userId: userId
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: 'QR code not available. Please connect first.'
+                });
+            }
+        });
+
+        // Send text status via Baileys WebSocket
+        this.app.post('/baileys/status/text/:userId', async (req, res) => {
+            const { userId } = req.params;
+            const { content, options = {} } = req.body;
+
+            try {
+                if (!this.baileysHandlers.has(userId)) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Baileys not connected for this user. Please connect first.'
+                    });
+                }
+
+                const handler = this.baileysHandlers.get(userId);
+                const result = await handler.sendTextStatus(content, options);
+
+                res.json({
+                    success: true,
+                    message: 'Status sent successfully via Baileys WebSocket',
+                    method: result.method,
+                    messageId: result.messageId,
+                    timestamp: result.timestamp
+                });
+
+            } catch (error) {
+                console.error(`[Baileys-${userId}] Status send error:`, error.message);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
+
+        // Send image status via Baileys WebSocket
+        this.app.post('/baileys/status/image/:userId', async (req, res) => {
+            const { userId } = req.params;
+            const { caption, options = {} } = req.body;
+
+            try {
+                if (!this.baileysHandlers.has(userId)) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Baileys not connected for this user. Please connect first.'
+                    });
+                }
+
+                if (!req.files || !req.files.image) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Image file is required'
+                    });
+                }
+
+                const handler = this.baileysHandlers.get(userId);
+                const imageBuffer = req.files.image.data;
+                const result = await handler.sendImageStatus(imageBuffer, caption, options);
+
+                res.json({
+                    success: true,
+                    message: 'Image status sent successfully via Baileys WebSocket',
+                    method: result.method,
+                    messageId: result.messageId,
+                    timestamp: result.timestamp
+                });
+
+            } catch (error) {
+                console.error(`[Baileys-${userId}] Image status send error:`, error.message);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
+
+        // Send video status via Baileys WebSocket
+        this.app.post('/baileys/status/video/:userId', async (req, res) => {
+            const { userId } = req.params;
+            const { caption, options = {} } = req.body;
+
+            try {
+                if (!this.baileysHandlers.has(userId)) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Baileys not connected for this user. Please connect first.'
+                    });
+                }
+
+                if (!req.files || !req.files.video) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Video file is required'
+                    });
+                }
+
+                const handler = this.baileysHandlers.get(userId);
+                const videoBuffer = req.files.video.data;
+                const result = await handler.sendVideoStatus(videoBuffer, caption, options);
+
+                res.json({
+                    success: true,
+                    message: 'Video status sent successfully via Baileys WebSocket',
+                    method: result.method,
+                    messageId: result.messageId,
+                    timestamp: result.timestamp
+                });
+
+            } catch (error) {
+                console.error(`[Baileys-${userId}] Video status send error:`, error.message);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
+
+        // Get Baileys connection status
+        this.app.get('/baileys/status/:userId', (req, res) => {
+            const { userId } = req.params;
+
+            if (this.baileysHandlers.has(userId)) {
+                const handler = this.baileysHandlers.get(userId);
+                const status = handler.getStatus();
+                res.json({
+                    success: true,
+                    ...status
+                });
+            } else {
+                res.json({
+                    success: false,
+                    connected: false,
+                    authenticated: false,
+                    message: 'Baileys not connected for this user'
+                });
+            }
+        });
+
+        // Disconnect Baileys
+        this.app.delete('/baileys/disconnect/:userId', async (req, res) => {
+            const { userId } = req.params;
+
+            try {
+                if (this.baileysHandlers.has(userId)) {
+                    const handler = this.baileysHandlers.get(userId);
+                    await handler.disconnect();
+                    this.baileysHandlers.delete(userId);
+                    this.baileysQRCodes.delete(userId);
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Baileys disconnected successfully',
+                    userId: userId
+                });
+
+            } catch (error) {
+                console.error(`[Baileys-${userId}] Disconnect error:`, error.message);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
         });
 
         // Health check with statistics
@@ -201,7 +473,7 @@ class WhatsAppAPI {
                     await automation.page.evaluate(() => {
                         if (window.WPPConfig) {
                             window.WPPConfig.sendStatusToDevice = true;
-                            window.WPPConfig.syncAllStatus = true;
+                            window.WPPConfig.syncAllStatus = false;
                         }
                     });
                 } catch (waJsError) {
@@ -214,7 +486,8 @@ class WhatsAppAPI {
                 if (isLoggedIn) {
                     // Already authenticated
                     this.sessionManager.updateSessionStatus(sessionId, 'ready');
-                    automation.statusHandler = new WhatsAppStatusHandler(automation.page, automation);
+                    // Use WebSocket-based handler exclusively
+                    automation.statusHandler = new WebSocketStatusHandler(automation.page, automation);
 
                     // Get and store the phone number for already authenticated sessions
                     const connectedPhoneNumber = await automation.getAuthenticatedPhoneNumber();
@@ -383,7 +656,8 @@ class WhatsAppAPI {
                                     return typeof window.WPP !== 'undefined' && window.WPP.isFullReady;
                                 }, { timeout: 30000 });
 
-                                automation.statusHandler = new WhatsAppStatusHandler(automation.page, automation);
+                                // Use WebSocket-based handler exclusively
+                    automation.statusHandler = new WebSocketStatusHandler(automation.page, automation);
                                 this.sessionManager.updateSessionStatus(sessionId, 'ready');
                                 console.log(`[${sessionId}] Session fully ready with WPP.isFullReady confirmed`);
 
@@ -423,7 +697,31 @@ class WhatsAppAPI {
         });
 
         this.app.get('/sessions', (req, res) => {
-            res.json({ sessions: this.sessionManager.getAllSessions() });
+            const regularSessions = this.sessionManager.getAllSessions();
+
+            // Add Baileys sessions
+            const baileysSessions = [];
+            for (const [userId, handler] of this.baileysHandlers.entries()) {
+                const status = handler.getStatus();
+                baileysSessions.push({
+                    sessionId: `baileys-${userId}`,
+                    userId: userId,
+                    type: 'baileys',
+                    status: status.authenticated ? 'authenticated' : (status.connected ? 'connecting' : 'pending'),
+                    createdAt: new Date().toISOString(), // We don't track creation time for Baileys
+                    lastActivity: new Date().toISOString(),
+                    method: 'baileys_websocket',
+                    isConnected: status.connected,
+                    isAuthenticated: status.authenticated,
+                    retryCount: status.retryCount
+                });
+            }
+
+            res.json({
+                sessions: [...regularSessions, ...baileysSessions],
+                baileysSessions: baileysSessions.length,
+                regularSessions: regularSessions.length
+            });
         });
 
         this.app.get('/sessions/:sessionId/status', (req, res) => {
@@ -551,46 +849,55 @@ class WhatsAppAPI {
                     });
                 }
 
-                // Wait for status handler to be initialized if session was just started
-                // Try up to 15 times with 1 second delays
-                let attempts = 0;
-                while (!automation.statusHandler && attempts < 15) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    attempts++;
-
-                    // Re-check the automation instance
-                    automation = this.sessionManager.getSession(req.params.sessionId);
-
-                    // Also check if WhatsApp is ready
-                    if (automation?.page) {
-                        try {
-                            const isReady = await automation.page.evaluate(() => {
-                                return window.WPP && window.WPP.isReady && window.WPP.isReady();
-                            });
-
-                            if (isReady && !automation.statusHandler) {
-                                const StatusHandler = require('../core/StatusHandler');
-                                automation.statusHandler = new StatusHandler(automation.page, automation);
-                            }
-                        } catch (e) {
-                            // Page might not be ready yet
-                        }
+                // Initialize status handler immediately for ultra-fast response
+                if (!automation.statusHandler && automation?.page) {
+                    try {
+                        const StatusHandler = require('../core/StatusHandler');
+                        automation.statusHandler = new StatusHandler(automation.page, automation);
+                        console.log(`[${req.params.sessionId}] StatusHandler initialized immediately for fast response`);
+                    } catch (e) {
+                        console.log(`[${req.params.sessionId}] StatusHandler initialization failed:`, e.message);
                     }
                 }
 
-                // Final check
+                // If still no status handler, return error immediately - no waiting
                 if (!automation.statusHandler) {
                     return res.status(503).json({
-                        error: 'Session is starting up, please try again in a few seconds',
+                        error: 'Status handler not available - session may not be ready',
                         status: this.sessionManager.sessionMetadata.get(req.params.sessionId)?.status
                     });
                 }
 
                 const { content, options } = req.body;
-                const statusResult = await automation.statusHandler.sendTextStatus(content, options || {});
 
-                this.sessionManager.updateSessionStatus(req.params.sessionId, 'active');
-                res.json({ success: true, result: statusResult });
+                // Actually wait for the status to be sent and get the real result
+                try {
+                    const result = await automation.statusHandler.sendTextStatus(content, options || {});
+
+                    this.sessionManager.updateSessionStatus(req.params.sessionId, 'active');
+
+                    if (result && result.success) {
+                        res.json({
+                            success: true,
+                            message: 'Text status sent successfully',
+                            method: result.method,
+                            result: result.result
+                        });
+                    } else {
+                        res.status(500).json({
+                            success: false,
+                            error: 'Status send failed - no result returned',
+                            details: result
+                        });
+                    }
+                } catch (statusError) {
+                    console.error(`[${req.params.sessionId}] Text status send error:`, statusError.message);
+                    res.status(500).json({
+                        success: false,
+                        error: `Failed to send status: ${statusError.message}`,
+                        needsAuth: statusError.message.includes('authentication') || statusError.message.includes('not ready')
+                    });
+                }
 
                 // Don't close browser - keep it open for subsequent operations
                 // await this.sessionManager.closeBrowserIfNotAwaitingAuth(req.params.sessionId);
@@ -636,46 +943,33 @@ class WhatsAppAPI {
                     });
                 }
 
-                // Wait for status handler to be initialized if session was just started
-                // Try up to 15 times with 1 second delays
-                let attempts = 0;
-                while (!automation.statusHandler && attempts < 15) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    attempts++;
-
-                    // Re-check the automation instance
-                    automation = this.sessionManager.getSession(req.params.sessionId);
-
-                    // Also check if WhatsApp is ready
-                    if (automation?.page) {
-                        try {
-                            const isReady = await automation.page.evaluate(() => {
-                                return window.WPP && window.WPP.isReady && window.WPP.isReady();
-                            });
-
-                            if (isReady && !automation.statusHandler) {
-                                const StatusHandler = require('../core/StatusHandler');
-                                automation.statusHandler = new StatusHandler(automation.page, automation);
-                            }
-                        } catch (e) {
-                            // Page might not be ready yet
-                        }
+                // Initialize status handler immediately for ultra-fast response
+                if (!automation.statusHandler && automation?.page) {
+                    try {
+                        const StatusHandler = require('../core/StatusHandler');
+                        automation.statusHandler = new StatusHandler(automation.page, automation);
+                        console.log(`[${req.params.sessionId}] StatusHandler initialized immediately for fast response`);
+                    } catch (e) {
+                        console.log(`[${req.params.sessionId}] StatusHandler initialization failed:`, e.message);
                     }
                 }
 
-                // Final check
+                // If still no status handler, return error immediately - no waiting
                 if (!automation.statusHandler) {
                     return res.status(503).json({
-                        error: 'Session is starting up, please try again in a few seconds',
+                        error: 'Status handler not available - session may not be ready',
                         status: this.sessionManager.sessionMetadata.get(req.params.sessionId)?.status
                     });
                 }
 
                 const { content, options } = req.body;
-                const imageResult = await automation.statusHandler.sendImageStatus(content, options || {});
+                // Send status without waiting for the result to prevent delays and double sends
+                automation.statusHandler.sendImageStatus(content, options || {}).catch(error => {
+                    console.error(`[${req.params.sessionId}] Image status send error:`, error);
+                });
 
                 this.sessionManager.updateSessionStatus(req.params.sessionId, 'active');
-                res.json({ success: true, result: imageResult });
+                res.json({ success: true, message: 'Image status sent successfully' });
 
                 // Don't close browser - keep it open for subsequent operations
                 // await this.sessionManager.closeBrowserIfNotAwaitingAuth(req.params.sessionId);
@@ -721,46 +1015,33 @@ class WhatsAppAPI {
                     });
                 }
 
-                // Wait for status handler to be initialized if session was just started
-                // Try up to 15 times with 1 second delays
-                let attempts = 0;
-                while (!automation.statusHandler && attempts < 15) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    attempts++;
-
-                    // Re-check the automation instance
-                    automation = this.sessionManager.getSession(req.params.sessionId);
-
-                    // Also check if WhatsApp is ready
-                    if (automation?.page) {
-                        try {
-                            const isReady = await automation.page.evaluate(() => {
-                                return window.WPP && window.WPP.isReady && window.WPP.isReady();
-                            });
-
-                            if (isReady && !automation.statusHandler) {
-                                const StatusHandler = require('../core/StatusHandler');
-                                automation.statusHandler = new StatusHandler(automation.page, automation);
-                            }
-                        } catch (e) {
-                            // Page might not be ready yet
-                        }
+                // Initialize status handler immediately for ultra-fast response
+                if (!automation.statusHandler && automation?.page) {
+                    try {
+                        const StatusHandler = require('../core/StatusHandler');
+                        automation.statusHandler = new StatusHandler(automation.page, automation);
+                        console.log(`[${req.params.sessionId}] StatusHandler initialized immediately for fast response`);
+                    } catch (e) {
+                        console.log(`[${req.params.sessionId}] StatusHandler initialization failed:`, e.message);
                     }
                 }
 
-                // Final check
+                // If still no status handler, return error immediately - no waiting
                 if (!automation.statusHandler) {
                     return res.status(503).json({
-                        error: 'Session is starting up, please try again in a few seconds',
+                        error: 'Status handler not available - session may not be ready',
                         status: this.sessionManager.sessionMetadata.get(req.params.sessionId)?.status
                     });
                 }
 
                 const { content, options } = req.body;
-                const videoResult = await automation.statusHandler.sendVideoStatus(content, options || {});
+                // Send status without waiting for the result to prevent delays and double sends
+                automation.statusHandler.sendVideoStatus(content, options || {}).catch(error => {
+                    console.error(`[${req.params.sessionId}] Video status send error:`, error);
+                });
 
                 this.sessionManager.updateSessionStatus(req.params.sessionId, 'active');
-                res.json({ success: true, result: videoResult });
+                res.json({ success: true, message: 'Video status sent successfully' });
 
                 // Don't close browser - keep it open for subsequent operations
                 // await this.sessionManager.closeBrowserIfNotAwaitingAuth(req.params.sessionId);
@@ -1075,6 +1356,33 @@ class WhatsAppAPI {
             res.json({ sessions });
         });
 
+        this.app.delete('/users/:userId', async (req, res) => {
+            try {
+                const userId = req.params.userId;
+
+                // Check if user exists
+                const user = this.sessionManager.getUser(userId);
+                if (!user) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+
+                // Delete user and their container
+                await this.sessionManager.deleteUser(userId);
+
+                res.json({
+                    success: true,
+                    message: `User ${userId} and their container have been deleted`,
+                    userId
+                });
+            } catch (error) {
+                console.error('[API] Error deleting user:', error);
+                res.status(500).json({
+                    error: 'Failed to delete user',
+                    details: error.message
+                });
+            }
+        });
+
         // Database management routes
         this.app.post('/database/backup', (req, res) => {
             const { path: backupPath } = req.body;
@@ -1271,6 +1579,137 @@ class WhatsAppAPI {
             }
         });
 
+        // ============================================
+        // Logs Management
+        // ============================================
+
+        // Store logs in memory (with limit)
+        this.logs = [];
+        this.maxLogs = 1000;
+
+        // Log capture method
+        this.addLog = (level, message, source = 'system') => {
+            const logEntry = {
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                level: level,
+                message: message,
+                source: source
+            };
+
+            this.logs.unshift(logEntry); // Add to beginning
+
+            // Keep only last maxLogs entries
+            if (this.logs.length > this.maxLogs) {
+                this.logs = this.logs.slice(0, this.maxLogs);
+            }
+        };
+
+        // Override console methods to capture logs
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        console.log = (...args) => {
+            const message = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            this.addLog('info', message);
+            originalConsoleLog.apply(console, args);
+        };
+
+        console.error = (...args) => {
+            const message = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            this.addLog('error', message);
+            originalConsoleError.apply(console, args);
+        };
+
+        console.warn = (...args) => {
+            const message = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            this.addLog('warn', message);
+            originalConsoleWarn.apply(console, args);
+        };
+
+        // Get logs endpoint
+        this.app.get('/logs', (req, res) => {
+            try {
+                const { level, limit = 100, source } = req.query;
+
+                let filteredLogs = this.logs;
+
+                // Filter by level if specified
+                if (level) {
+                    filteredLogs = filteredLogs.filter(log => log.level === level);
+                }
+
+                // Filter by source if specified
+                if (source) {
+                    filteredLogs = filteredLogs.filter(log => log.source === source);
+                }
+
+                // Limit results
+                const limitedLogs = filteredLogs.slice(0, parseInt(limit));
+
+                res.json({
+                    success: true,
+                    logs: limitedLogs,
+                    totalCount: this.logs.length,
+                    filteredCount: filteredLogs.length
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to fetch logs: ' + error.message
+                });
+            }
+        });
+
+        // Clear logs endpoint
+        this.app.delete('/logs', (req, res) => {
+            try {
+                this.logs = [];
+                res.json({
+                    success: true,
+                    message: 'Logs cleared successfully'
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to clear logs: ' + error.message
+                });
+            }
+        });
+
+        // Add manual log entry
+        this.app.post('/logs', (req, res) => {
+            try {
+                const { level = 'info', message, source = 'api' } = req.body;
+
+                if (!message) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Message is required'
+                    });
+                }
+
+                this.addLog(level, message, source);
+
+                res.json({
+                    success: true,
+                    message: 'Log entry added successfully'
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to add log entry: ' + error.message
+                });
+            }
+        });
+
     }
 
     start() {
@@ -1297,6 +1736,7 @@ class WhatsAppAPI {
             console.log(`  GET    /users/:id               - Get user details`);
             console.log(`  GET    /users/:id/sessions      - Get user's sessions`);
             console.log(`  GET    /users/:id/sessions/active - Get user's active sessions`);
+            console.log(`  DELETE /users/:id               - Delete user and their container`);
             console.log(`\n💾 Database Management:`);
             console.log(`  POST   /database/backup         - Create database backup`);
             console.log(`  POST   /database/restore        - Restore from backup`);
@@ -1314,6 +1754,15 @@ class WhatsAppAPI {
             console.log(`  GET    /users/:id/proxy         - Get user's proxy assignment`);
             console.log(`  POST   /users/:id/proxy/rotate  - Rotate user's proxy`);
             console.log(`  GET    /proxy-assignments       - List all proxy assignments`);
+
+            console.log(`\n🚀 Baileys Direct Status (No Browser):`);
+            console.log(`  POST   /baileys/connect/:userId - Connect Baileys for user`);
+            console.log(`  GET    /baileys/qr/:userId      - Get Baileys QR code`);
+            console.log(`  POST   /baileys/status/text/:userId - Send text status via Baileys WebSocket`);
+            console.log(`  POST   /baileys/status/image/:userId - Send image status via Baileys WebSocket`);
+            console.log(`  POST   /baileys/status/video/:userId - Send video status via Baileys WebSocket`);
+            console.log(`  GET    /baileys/status/:userId  - Get Baileys connection status`);
+            console.log(`  DELETE /baileys/disconnect/:userId - Disconnect Baileys`);
 
             console.log(`\n📊 System:`);
             console.log(`  GET    /health                  - Health check with statistics`);

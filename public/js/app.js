@@ -1,9 +1,11 @@
 // Main Application Logic
+const API_BASE_URL = 'https://whatsapp.social-crm.co.il';
 let currentSession = null;
 let sessions = [];
 let qrCheckInterval = null;
 let statusPollInterval = null;
 let currentPollingSessionId = null;
+let baileysSessions = new Map(); // Track Baileys sessions
 
 // Add logout functionality
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             if (confirm('Are you sure you want to logout?')) {
                 try {
-                    const response = await fetch('/logout', {
+                    const response = await fetch(`${API_BASE_URL}/logout`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -196,6 +198,9 @@ function renderSessionsList() {
                           session.status === 'waiting_for_authentication' ? 'bg-yellow-500' :
                           'bg-gray-500';
 
+        const isBaileys = session.type === 'baileys' || session.sessionId?.startsWith('baileys-');
+        const connectionType = isBaileys ? '🔗 Baileys' : '🌐 Browser';
+
         return `
             <div class="session-item p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer transition-colors ${currentSession?.sessionId === session.sessionId ? 'bg-secondary' : ''}"
                  data-session-id="${session.sessionId}">
@@ -203,6 +208,7 @@ function renderSessionsList() {
                     <div>
                         <div class="font-medium text-sm">${session.userId}</div>
                         <div class="text-xs text-muted-foreground">${session.sessionId.substring(0, 8)}...</div>
+                        <div class="text-xs text-muted-foreground">${connectionType}</div>
                         ${session.phoneNumber ? `<div class="text-xs text-muted-foreground">📱 ${session.phoneNumber}</div>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
@@ -367,9 +373,39 @@ function hideCreateSessionModal() {
     document.getElementById('phoneNumberField').classList.add('hidden');
 }
 
+// Connection type selection
+document.querySelectorAll('.connection-type').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.connection-type').forEach(b => {
+            b.classList.remove('bg-secondary', 'text-secondary-foreground');
+        });
+        btn.classList.add('bg-secondary', 'text-secondary-foreground');
+
+        // For Baileys, only QR code is currently supported
+        if (btn.dataset.type === 'baileys') {
+            // Reset to QR code method for Baileys
+            document.querySelectorAll('.auth-method').forEach(b => {
+                b.classList.remove('bg-secondary', 'text-secondary-foreground');
+            });
+            document.querySelector('.auth-method[data-method="qr"]').classList.add('bg-secondary', 'text-secondary-foreground');
+            document.getElementById('phoneNumberField').classList.add('hidden');
+
+            // Disable pairing code for Baileys
+            document.querySelector('.auth-method[data-method="code"]').disabled = true;
+            document.querySelector('.auth-method[data-method="code"]').classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            // Re-enable pairing code for browser mode
+            document.querySelector('.auth-method[data-method="code"]').disabled = false;
+            document.querySelector('.auth-method[data-method="code"]').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    });
+});
+
 // Authentication method selection
 document.querySelectorAll('.auth-method').forEach(btn => {
     btn.addEventListener('click', () => {
+        if (btn.disabled) return; // Skip if disabled (Baileys pairing code)
+
         document.querySelectorAll('.auth-method').forEach(b => {
             b.classList.remove('bg-secondary', 'text-secondary-foreground');
         });
@@ -392,6 +428,7 @@ document.getElementById('createSessionConfirm').addEventListener('click', async 
         return;
     }
 
+    const connectionType = document.querySelector('.connection-type.bg-secondary')?.dataset.type || 'browser';
     const authMethod = document.querySelector('.auth-method.bg-secondary')?.dataset.method || 'qr';
     const phoneNumberElement = document.getElementById('phoneNumberInput');
     const phoneNumber = phoneNumberElement ? phoneNumberElement.value.trim() : null;
@@ -403,29 +440,66 @@ document.getElementById('createSessionConfirm').addEventListener('click', async 
 
     try {
         showToast('Creating session...', 'info');
-        const result = await api.createSession(userId, authMethod, phoneNumber);
 
-        if (result.success) {
-            hideCreateSessionModal();
+        let result;
+        if (connectionType === 'baileys') {
+            // Create Baileys session
+            result = await api.createBaileysSession(userId);
+            if (result.success) {
+                // Track Baileys session
+                baileysSessions.set(userId, {
+                    userId,
+                    type: 'baileys',
+                    status: 'connecting',
+                    createdAt: new Date().toISOString()
+                });
 
-            if (result.authData) {
-                if (result.authData.type === 'qr_code' && result.authData.qr) {
-                    showQRCode(result.authData.qr);
-                } else if (result.authData.type === 'pairing_code' && result.authData.code) {
-                    showPairingCode(result.authData.code, result.authData.phoneNumber);
+                hideCreateSessionModal();
+                showToast('Baileys session created successfully', 'success');
+
+                // Try to get QR code immediately
+                try {
+                    const qrResult = await api.getBaileysQRCode(userId);
+                    if (qrResult.qr) {
+                        showQRCode(qrResult.qr, true); // true indicates Baileys
+                        pollBaileysStatus(userId);
+                    } else {
+                        showToast('Waiting for QR code...', 'info');
+                        // Poll for QR code
+                        setTimeout(() => pollBaileysQRCode(userId), 2000);
+                    }
+                } catch (qrError) {
+                    console.error('Failed to get QR code:', qrError);
+                    showToast('Session created, waiting for QR code...', 'info');
+                    setTimeout(() => pollBaileysQRCode(userId), 2000);
                 }
+            } else {
+                showToast(result.error || 'Failed to create Baileys session', 'error');
             }
-
-            showToast('Session created successfully', 'success');
-
-            // Start polling for session status
-            pollSessionStatus(result.sessionId, authMethod);
-
-            setTimeout(() => loadSessions(), 2000);
         } else {
-            showToast(result.error || 'Failed to create session', 'error');
+            // Create browser session (existing logic)
+            result = await api.createSession(userId, authMethod, phoneNumber);
+
+            if (result.success) {
+                hideCreateSessionModal();
+
+                if (result.authData) {
+                    if (result.authData.type === 'qr_code' && result.authData.qr) {
+                        showQRCode(result.authData.qr);
+                    } else if (result.authData.type === 'pairing_code' && result.authData.code) {
+                        showPairingCode(result.authData.code, result.authData.phoneNumber);
+                    }
+                }
+
+                showToast('Session created successfully', 'success');
+                pollSessionStatus(result.sessionId, authMethod);
+                setTimeout(() => loadSessions(), 2000);
+            } else {
+                showToast(result.error || 'Failed to create session', 'error');
+            }
         }
     } catch (error) {
+        console.error('Create session error:', error);
         showToast('Failed to create session', 'error');
     }
 });
@@ -433,11 +507,17 @@ document.getElementById('createSessionConfirm').addEventListener('click', async 
 document.getElementById('createSessionCancel').addEventListener('click', hideCreateSessionModal);
 
 // QR Code display
-function showQRCode(qrData) {
+function showQRCode(qrData, isBaileys = false) {
     const modal = document.getElementById('qrModal');
 
     // Update QR code display using helper function
     updateQRCodeDisplay(qrData);
+
+    // Update modal title for Baileys
+    const modalTitle = modal.querySelector('h2');
+    if (modalTitle) {
+        modalTitle.textContent = isBaileys ? 'Scan QR Code (Baileys)' : 'Scan QR Code';
+    }
 
     // Show the modal
     modal.classList.remove('hidden');
@@ -549,6 +629,90 @@ async function pollSessionStatus(sessionId, authMethod = 'qr') {
     }, 2000); // Poll every 2 seconds
 }
 
+// Baileys QR code polling
+async function pollBaileysQRCode(userId) {
+    let attempts = 0;
+    const maxAttempts = 30; // 1 minute with 2-second intervals
+
+    const qrPollInterval = setInterval(async () => {
+        attempts++;
+
+        try {
+            const qrResult = await api.getBaileysQRCode(userId);
+            if (qrResult.qr) {
+                clearInterval(qrPollInterval);
+                showQRCode(qrResult.qr, true);
+                pollBaileysStatus(userId);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(qrPollInterval);
+                showToast('Failed to get QR code. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to poll Baileys QR code:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(qrPollInterval);
+                showToast('Failed to get QR code. Please try again.', 'error');
+            }
+        }
+    }, 2000);
+}
+
+// Baileys status polling
+async function pollBaileysStatus(userId) {
+    let attempts = 0;
+    const maxAttempts = 90; // 3 minutes
+
+    const statusPollInterval = setInterval(async () => {
+        attempts++;
+
+        try {
+            const status = await api.getBaileysStatus(userId);
+            console.log('Baileys status:', status);
+
+            if (status.connected && status.authenticated) {
+                clearInterval(statusPollInterval);
+
+                // Update local Baileys session
+                const session = baileysSessions.get(userId);
+                if (session) {
+                    session.status = 'ready';
+                    baileysSessions.set(userId, session);
+                }
+
+                showToast('Baileys session authenticated successfully!', 'success');
+                document.getElementById('qrModal').classList.add('hidden');
+
+                // Refresh the main sessions view to show the Baileys session
+                // For now, we'll add it to the main sessions array for display
+                sessions.push({
+                    sessionId: `baileys-${userId}`,
+                    userId: userId,
+                    status: 'ready',
+                    type: 'baileys',
+                    createdAt: new Date().toISOString(),
+                    phoneNumber: null
+                });
+                renderSessionsList();
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(statusPollInterval);
+                showToast('Baileys authentication timed out. Please try again.', 'error');
+                document.getElementById('qrModal').classList.add('hidden');
+                return;
+            }
+        } catch (error) {
+            console.error('Baileys status poll error:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(statusPollInterval);
+                showToast('Baileys authentication failed. Please try again.', 'error');
+                document.getElementById('qrModal').classList.add('hidden');
+            }
+        }
+    }, 2000);
+}
+
 // Helper function to update QR code display
 function updateQRCodeDisplay(qrData) {
     const container = document.getElementById('qrContainer');
@@ -623,11 +787,21 @@ document.getElementById('sendTextStatus').addEventListener('click', async (e) =>
     setButtonLoading(button, true, 'Posting...');
 
     try {
-        const result = await api.sendTextStatus(currentSession.sessionId, content, options);
+        let result;
+        const isBaileys = currentSession.type === 'baileys' || currentSession.sessionId?.startsWith('baileys-');
 
-        // Check if authentication is required
-        if (handleAuthRequired(result)) {
-            return;
+        if (isBaileys) {
+            // Use Baileys API
+            const userId = currentSession.userId;
+            result = await api.sendBaileysTextStatus(userId, content, options);
+        } else {
+            // Use browser session API
+            result = await api.sendTextStatus(currentSession.sessionId, content, options);
+
+            // Check if authentication is required for browser sessions
+            if (handleAuthRequired(result)) {
+                return;
+            }
         }
 
         if (result.success) {
@@ -637,6 +811,7 @@ document.getElementById('sendTextStatus').addEventListener('click', async (e) =>
             showToast(result.error || 'Failed to post status', 'error');
         }
     } catch (error) {
+        console.error('Status send error:', error);
         showToast('Failed to post status', 'error');
     } finally {
         setButtonLoading(button, false);
@@ -707,41 +882,33 @@ document.getElementById('sendImageStatus').addEventListener('click', async (e) =
     showToast('Uploading image...', 'info');
 
     try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const imageData = e.target.result;
-            const caption = document.getElementById('imageCaption').value.trim();
+        const caption = document.getElementById('imageCaption').value.trim();
 
-            const result = await api.sendImageStatus(currentSession.sessionId, imageData, caption);
+        // Pass the file directly to the API client
+        const result = await api.sendImageStatus(currentSession.sessionId, file, caption);
 
-            // Check if authentication is required
-            if (handleAuthRequired(result)) {
-                return;
-            }
+        // Check if authentication is required
+        if (handleAuthRequired(result)) {
+            return;
+        }
 
-            if (result.success) {
-                showToast('Image status posted successfully', 'success');
-                document.getElementById('statusImage').value = '';
-                document.getElementById('imageCaption').value = '';
-                document.getElementById('imageCaptionCount').textContent = '0';
-                document.getElementById('imagePreview').classList.add('hidden');
-                document.querySelector('label[for="statusImage"]').innerHTML = `
-                    <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <span class="text-muted-foreground">Click to upload image</span>
-                    <div class="text-xs text-muted-foreground mt-1">Supported: JPG, PNG, GIF</div>
-                `;
-            } else {
-                showToast(result.error || 'Failed to post image status', 'error');
-            }
-            setButtonLoading(button, false);
-        };
-        reader.onerror = () => {
-            showToast('Failed to read image file', 'error');
-            setButtonLoading(button, false);
-        };
-        reader.readAsDataURL(file);
+        if (result.success) {
+            showToast('Image status posted successfully', 'success');
+            document.getElementById('statusImage').value = '';
+            document.getElementById('imageCaption').value = '';
+            document.getElementById('imageCaptionCount').textContent = '0';
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.querySelector('label[for="statusImage"]').innerHTML = `
+                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <span class="text-muted-foreground">Click to upload image</span>
+                <div class="text-xs text-muted-foreground mt-1">Supported: JPG, PNG, GIF</div>
+            `;
+        } else {
+            showToast(result.error || 'Failed to post image status', 'error');
+        }
+        setButtonLoading(button, false);
     } catch (error) {
         showToast('Failed to post image status', 'error');
         setButtonLoading(button, false);
@@ -823,43 +990,35 @@ document.getElementById('sendVideoStatus').addEventListener('click', async (e) =
     showToast('Uploading video...', 'info');
 
     try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const videoData = e.target.result;
-            const caption = document.getElementById('videoCaption').value.trim();
+        const caption = document.getElementById('videoCaption').value.trim();
 
-            const result = await api.sendVideoStatus(currentSession.sessionId, videoData, caption);
+        // Pass the file directly to the API client
+        const result = await api.sendVideoStatus(currentSession.sessionId, file, caption);
 
-            // Check if authentication is required
-            if (handleAuthRequired(result)) {
-                return;
-            }
+        // Check if authentication is required
+        if (handleAuthRequired(result)) {
+            return;
+        }
 
-            if (result.success) {
-                showToast('Video status posted successfully', 'success');
-                // Clear form
-                document.getElementById('statusVideo').value = '';
-                document.getElementById('videoCaption').value = '';
-                document.getElementById('videoCaptionCount').textContent = '0';
-                document.getElementById('videoPreview').classList.add('hidden');
-                document.getElementById('videoPreviewPlayer').src = '';
-                document.querySelector('label[for="statusVideo"]').innerHTML = `
-                    <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                    <span class="text-muted-foreground">Click to upload video</span>
-                    <div class="text-xs text-muted-foreground mt-1">Supported: MP4, AVI, MOV (Max 30 seconds)</div>
-                `;
-            } else {
-                showToast(result.error || 'Failed to post video status', 'error');
-            }
-            setButtonLoading(button, false);
-        };
-        reader.onerror = () => {
-            showToast('Failed to read video file', 'error');
-            setButtonLoading(button, false);
-        };
-        reader.readAsDataURL(file);
+        if (result.success) {
+            showToast('Video status posted successfully', 'success');
+            // Clear form
+            document.getElementById('statusVideo').value = '';
+            document.getElementById('videoCaption').value = '';
+            document.getElementById('videoCaptionCount').textContent = '0';
+            document.getElementById('videoPreview').classList.add('hidden');
+            document.getElementById('videoPreviewPlayer').src = '';
+            document.querySelector('label[for="statusVideo"]').innerHTML = `
+                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span class="text-muted-foreground">Click to upload video</span>
+                <div class="text-xs text-muted-foreground mt-1">Supported: MP4, AVI, MOV (Max 30 seconds)</div>
+            `;
+        } else {
+            showToast(result.error || 'Failed to post video status', 'error');
+        }
+        setButtonLoading(button, false);
     } catch (error) {
         showToast('Failed to post video status', 'error');
         setButtonLoading(button, false);
@@ -1182,6 +1341,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadProxyAssignments();
             } else if (targetTab === 'system') {
                 loadSystemStats();
+            } else if (targetTab === 'logs') {
+                loadLogs();
             }
         });
     });
@@ -1197,7 +1358,7 @@ let filteredProxies = [];
 // Load proxy statistics
 async function loadProxyStatistics() {
     try {
-        const response = await fetch('/proxies/statistics');
+        const response = await fetch(`${API_BASE_URL}/proxies/statistics`);
         const stats = await response.json();
 
         // Check if elements exist before updating
@@ -1218,7 +1379,7 @@ async function loadProxyStatistics() {
 // Load proxies
 async function loadProxies() {
     try {
-        const response = await fetch('/proxies');
+        const response = await fetch(`${API_BASE_URL}/proxies`);
         const result = await response.json();
         proxies = result.proxies || [];
 
@@ -1323,7 +1484,7 @@ function renderProxies() {
 // Load proxy assignments
 async function loadProxyAssignments() {
     try {
-        const response = await fetch('/proxy-assignments');
+        const response = await fetch(`${API_BASE_URL}/proxy-assignments`);
         const result = await response.json();
         const assignments = result.assignments || [];
 
@@ -1383,7 +1544,7 @@ function renderAssignments(assignments) {
 async function checkProxyHealth(proxyId) {
     try {
         showToast('Checking proxy health...', 'info');
-        const response = await fetch(`/proxies/${proxyId}/health-check`, {
+        const response = await fetch(`${API_BASE_URL}/proxies/${proxyId}/health-check`, {
             method: 'POST'
         });
         const result = await response.json();
@@ -1410,7 +1571,7 @@ async function removeProxy(proxyId) {
     }
 
     try {
-        const response = await fetch(`/proxies/${proxyId}`, {
+        const response = await fetch(`${API_BASE_URL}/proxies/${proxyId}`, {
             method: 'DELETE'
         });
 
@@ -1432,7 +1593,7 @@ async function removeProxy(proxyId) {
 async function rotateUserProxy(userId) {
     try {
         showToast('Rotating proxy...', 'info');
-        const response = await fetch(`/users/${userId}/proxy/rotate`, {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/proxy/rotate`, {
             method: 'POST'
         });
 
@@ -1451,7 +1612,7 @@ async function rotateUserProxy(userId) {
 // Load system statistics
 async function loadSystemStats() {
     try {
-        const response = await fetch('/health');
+        const response = await fetch(`${API_BASE_URL}/health`);
         const stats = await response.json();
 
         const systemStatsDiv = document.getElementById('systemStats');
@@ -1487,6 +1648,203 @@ async function loadSystemStats() {
         `;
     } catch (error) {
         console.error('Failed to load system stats:', error);
+    }
+}
+
+// ============================================
+// Logs Management
+// ============================================
+
+let logsData = [];
+let filteredLogs = [];
+let logsAutoScroll = true;
+let logsAutoRefresh = false;
+let logsRefreshInterval = null;
+
+// Load logs from API
+async function loadLogs() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/logs`);
+        const result = await response.json();
+        logsData = result.logs || [];
+
+        // Apply current filters
+        applyLogsFilters();
+        renderLogs();
+
+        const logsCountEl = document.getElementById('logsCount');
+        if (logsCountEl) {
+            logsCountEl.textContent = `${filteredLogs.length} logs`;
+        }
+
+        // Auto-scroll to bottom if enabled
+        if (logsAutoScroll) {
+            const logsContainer = document.getElementById('logsContainer');
+            if (logsContainer) {
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load logs:', error);
+        showToast('Failed to load logs', 'error');
+    }
+}
+
+// Apply filters to logs
+function applyLogsFilters() {
+    const levelFilterEl = document.getElementById('logsLevelFilter');
+    const searchInputEl = document.getElementById('logsSearchInput');
+
+    const levelFilter = levelFilterEl ? levelFilterEl.value : '';
+    const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+
+    filteredLogs = logsData.filter(log => {
+        const matchesLevel = !levelFilter || log.level === levelFilter;
+        const matchesSearch = !searchTerm ||
+            log.message.toLowerCase().includes(searchTerm) ||
+            (log.timestamp && log.timestamp.toLowerCase().includes(searchTerm));
+
+        return matchesLevel && matchesSearch;
+    });
+
+    // Sort by timestamp (newest first)
+    filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+// Render logs
+function renderLogs() {
+    const container = document.getElementById('logsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (filteredLogs.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-muted-foreground">
+                No logs found
+            </div>
+        `;
+        return;
+    }
+
+    filteredLogs.forEach(log => {
+        const logEl = document.createElement('div');
+        logEl.className = 'p-3 border-b border-border hover:bg-muted/50 transition-colors';
+
+        const levelColor = {
+            error: 'text-red-500',
+            warn: 'text-yellow-500',
+            info: 'text-blue-500',
+            debug: 'text-gray-500'
+        }[log.level] || 'text-gray-500';
+
+        const levelBg = {
+            error: 'bg-red-500/10',
+            warn: 'bg-yellow-500/10',
+            info: 'bg-blue-500/10',
+            debug: 'bg-gray-500/10'
+        }[log.level] || 'bg-gray-500/10';
+
+        const timestamp = new Date(log.timestamp).toLocaleString();
+
+        logEl.innerHTML = `
+            <div class="flex items-start gap-3">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${levelBg} ${levelColor}">
+                    ${log.level.toUpperCase()}
+                </span>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-mono break-all">${escapeHtml(log.message)}</div>
+                    <div class="text-xs text-muted-foreground mt-1">${timestamp}</div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(logEl);
+    });
+}
+
+// Clear all logs
+async function clearLogs() {
+    if (!confirm('Are you sure you want to clear all logs?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/logs`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showToast('Logs cleared successfully', 'success');
+            await loadLogs();
+        } else {
+            showToast('Failed to clear logs', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to clear logs:', error);
+        showToast('Failed to clear logs', 'error');
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Start/stop auto-refresh
+function toggleLogsAutoRefresh() {
+    const toggleBtn = document.getElementById('logsAutoRefreshBtn');
+
+    if (logsAutoRefresh) {
+        // Stop auto-refresh
+        logsAutoRefresh = false;
+        if (logsRefreshInterval) {
+            clearInterval(logsRefreshInterval);
+            logsRefreshInterval = null;
+        }
+        if (toggleBtn) {
+            toggleBtn.textContent = 'Start Auto-refresh';
+            toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            toggleBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        }
+    } else {
+        // Start auto-refresh
+        logsAutoRefresh = true;
+        logsRefreshInterval = setInterval(loadLogs, 2000); // Refresh every 2 seconds
+        if (toggleBtn) {
+            toggleBtn.textContent = 'Stop Auto-refresh';
+            toggleBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            toggleBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        }
+    }
+}
+
+// Toggle auto-scroll
+function toggleLogsAutoScroll() {
+    const toggleBtn = document.getElementById('logsAutoScrollBtn');
+
+    logsAutoScroll = !logsAutoScroll;
+
+    if (toggleBtn) {
+        if (logsAutoScroll) {
+            toggleBtn.textContent = 'Disable Auto-scroll';
+            toggleBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            toggleBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        } else {
+            toggleBtn.textContent = 'Enable Auto-scroll';
+            toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            toggleBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        }
+    }
+
+    // If enabled, scroll to bottom immediately
+    if (logsAutoScroll) {
+        const logsContainer = document.getElementById('logsContainer');
+        if (logsContainer) {
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
     }
 }
 
@@ -1560,7 +1918,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .filter(t => t);
 
                 try {
-                    const response = await fetch('/proxies', {
+                    const response = await fetch(`${API_BASE_URL}/proxies`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ proxy: proxyString, tags })
@@ -1616,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(t => t);
 
         try {
-            const response = await fetch('/proxies/import', {
+            const response = await fetch(`${API_BASE_URL}/proxies/import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ proxies: proxyList, tags })
@@ -1647,7 +2005,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setButtonLoading(button, true, 'Importing...');
 
         try {
-            const response = await fetch('/proxies/import/file', {
+            const response = await fetch(`${API_BASE_URL}/proxies/import/file`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filePath: '/home/ubuntu/wa-auto-v2/proxies.txt' })
@@ -1676,7 +2034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setButtonLoading(button, true, 'Checking...');
 
         try {
-            const response = await fetch('/proxies/health-check', { method: 'POST' });
+            const response = await fetch(`${API_BASE_URL}/proxies/health-check`, { method: 'POST' });
             if (response.ok) {
                 const result = await response.json();
                 showToast(`Health check complete: ${result.results.healthy} healthy, ${result.results.unhealthy} unhealthy`, 'success');
@@ -1704,6 +2062,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setButtonLoading(button, false);
     });
+
+    // ============================================
+    // Logs Event Handlers
+    // ============================================
+
+    // Logs filter handlers - add after a delay to ensure elements exist
+    setTimeout(() => {
+        const levelFilter = document.getElementById('logsLevelFilter');
+        const searchInput = document.getElementById('logsSearchInput');
+
+        if (levelFilter) {
+            levelFilter.addEventListener('change', () => {
+                applyLogsFilters();
+                renderLogs();
+                const logsCountEl = document.getElementById('logsCount');
+                if (logsCountEl) {
+                    logsCountEl.textContent = `${filteredLogs.length} logs`;
+                }
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                applyLogsFilters();
+                renderLogs();
+                const logsCountEl = document.getElementById('logsCount');
+                if (logsCountEl) {
+                    logsCountEl.textContent = `${filteredLogs.length} logs`;
+                }
+            });
+        }
+
+        // Logs control buttons
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        const clearLogsBtn = document.getElementById('clearLogsBtn');
+        const autoRefreshBtn = document.getElementById('logsAutoRefreshBtn');
+        const autoScrollBtn = document.getElementById('logsAutoScrollBtn');
+
+        if (refreshLogsBtn) {
+            refreshLogsBtn.addEventListener('click', async () => {
+                const button = refreshLogsBtn;
+                setButtonLoading(button, true, 'Refreshing...');
+                await loadLogs();
+                setButtonLoading(button, false);
+            });
+        }
+
+        if (clearLogsBtn) {
+            clearLogsBtn.addEventListener('click', clearLogs);
+        }
+
+        if (autoRefreshBtn) {
+            autoRefreshBtn.addEventListener('click', toggleLogsAutoRefresh);
+        }
+
+        if (autoScrollBtn) {
+            autoScrollBtn.addEventListener('click', toggleLogsAutoScroll);
+        }
+    }, 100);
 });
 
 // Initialize

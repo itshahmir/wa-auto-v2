@@ -2,9 +2,10 @@
 const { SessionManager } = require('./src/core/SessionManager');
 const { WhatsAppAutomation } = require('./src/core/WhatsAppAutomation');
 const { WhatsAppAPI } = require('./src/api/server');
+const WebSocketStatusHandler = require('./src/core/WebSocketStatusHandler');
 
 // Export the imported classes for backward compatibility
-module.exports = { WhatsAppAutomation, SessionManager, WhatsAppAPI };
+module.exports = { WhatsAppAutomation, SessionManager, WhatsAppAPI, WebSocketStatusHandler };
 
 // If run directly, start the API server
 if (require.main === module) {

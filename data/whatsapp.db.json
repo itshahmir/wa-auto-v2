@@ -362,37 +362,52 @@
       "userId": "user_1758051249201",
       "phoneNumber": null,
       "createdAt": "2025-09-16T19:34:10.287Z",
-      "status": "active",
-      "lastActivity": "2025-09-16T21:14:31.662Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:21:04.374Z",
       "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/a44e645b-1c02-4ba9-8694-83c5ecb6b6b0",
-      "proxyId": null,
-      "proxyInfo": null,
+      "proxyId": "mfn20zwt5s27rglt94h",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
       "authData": null,
-      "authMethod": "qr"
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T00:21:15.963Z"
     },
     {
       "id": "3c33b82f-e073-493a-82ae-04c51de97eb8",
       "userId": "shahmir",
       "phoneNumber": null,
       "createdAt": "2025-09-16T20:48:31.560Z",
-      "status": "active",
-      "lastActivity": "2025-09-16T21:03:31.547Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:21:04.378Z",
       "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/3c33b82f-e073-493a-82ae-04c51de97eb8",
-      "proxyId": null,
-      "proxyInfo": null,
+      "proxyId": "mfn20zwt5s27rglt94h",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
       "authData": null,
-      "authMethod": "qr"
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T00:21:17.787Z"
     },
     {
       "id": "f791b7d7-9feb-43b7-a185-5894145bdaee",
       "userId": "23",
       "phoneNumber": null,
       "createdAt": "2025-09-16T20:51:02.766Z",
-      "status": "active",
-      "lastActivity": "2025-09-16T21:00:44.099Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:21:04.381Z",
       "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/f791b7d7-9feb-43b7-a185-5894145bdaee",
-      "proxyId": null,
-      "proxyInfo": null
+      "proxyId": "mfn20zwt5s27rglt94h",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-17T00:21:19.827Z"
     },
     {
       "id": "cb3ce131-db8e-4502-b218-1e15161ae931",
@@ -405,6 +420,435 @@
       "proxyId": null,
       "proxyInfo": null,
       "terminatedAt": "2025-09-16T21:18:33.841Z"
+    },
+    {
+      "id": "eef5907a-9a2d-4b01-afae-1789aa7d19b1",
+      "userId": "elyau",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T00:21:49.379Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:37:20.656Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/eef5907a-9a2d-4b01-afae-1789aa7d19b1",
+      "proxyId": "mfn20zwt5s27rglt94h",
+      "proxyInfo": {
+        "host": "brd.superproxy.io",
+        "port": 33335,
+        "status": "healthy"
+      },
+      "terminatedAt": "2025-09-17T00:38:48.255Z"
+    },
+    {
+      "id": "518dcafd-768d-4b0b-99d7-ef4d069b40b0",
+      "userId": "elyau_fixed",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T00:39:05.469Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:40:57.327Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/518dcafd-768d-4b0b-99d7-ef4d069b40b0",
+      "proxyId": null,
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-17T00:40:57.396Z"
+    },
+    {
+      "id": "0156dcc4-da14-418b-82d6-f445d2f9ca59",
+      "userId": "elyau_main",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T00:42:47.931Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:44:39.799Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/0156dcc4-da14-418b-82d6-f445d2f9ca59",
+      "proxyId": null,
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-17T00:44:39.866Z"
+    },
+    {
+      "id": "53a10996-07c3-4c1b-9e14-bb8a8a5bb6e2",
+      "userId": "elyau_qr",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T00:46:02.194Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T00:47:54.025Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/53a10996-07c3-4c1b-9e14-bb8a8a5bb6e2",
+      "proxyId": null,
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-17T00:47:54.093Z"
+    },
+    {
+      "id": "045b9a76-8b81-44f0-83e0-d35d17038089",
+      "userId": "15",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T00:48:07.814Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T01:07:50.670Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/045b9a76-8b81-44f0-83e0-d35d17038089",
+      "proxyId": null,
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-17T01:40:33.270Z"
+    },
+    {
+      "id": "fa65a347-1d27-4dcd-aa01-a46bd024a134",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T01:55:39.252Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T01:55:39.252Z",
+      "sessionPath": "/app/src/core/sessions/fa65a347-1d27-4dcd-aa01-a46bd024a134",
+      "proxyId": null,
+      "proxyInfo": null,
+      "terminatedAt": "2025-09-17T02:03:43.623Z"
+    },
+    {
+      "id": "ae95049c-c4f0-4872-b6ba-9c9a714bd7fd",
+      "userId": "test-user-1",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T02:09:38.339Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T02:09:38.339Z",
+      "sessionPath": "/app/src/core/sessions/ae95049c-c4f0-4872-b6ba-9c9a714bd7fd",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "36068610afd24f00e6b2e7e679adcfc87f8d5049558c9b4635ff6a4f513863bb",
+        "containerName": "wa-user-test-user-1",
+        "ip": "172.20.0.100",
+        "port": 3101,
+        "endpoint": "http://localhost:3101"
+      },
+      "terminatedAt": "2025-09-17T11:21:39.958Z"
+    },
+    {
+      "id": "b7a3419c-be50-48c8-887a-1769263afd4d",
+      "userId": "test-user-1",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T02:11:11.710Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T02:11:11.710Z",
+      "sessionPath": "/app/src/core/sessions/b7a3419c-be50-48c8-887a-1769263afd4d",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "36068610afd24f00e6b2e7e679adcfc87f8d5049558c9b4635ff6a4f513863bb",
+        "containerName": "wa-user-test-user-1",
+        "ip": "172.20.0.100",
+        "port": 3101,
+        "endpoint": "http://localhost:3101"
+      },
+      "terminatedAt": "2025-09-17T11:21:38.170Z"
+    },
+    {
+      "id": "49c83ad2-4696-4e64-ba47-a1b7493a19b5",
+      "userId": "elyau",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T02:18:46.370Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T02:43:36.280Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/49c83ad2-4696-4e64-ba47-a1b7493a19b5",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "5a6138765940cba35908d56bb14f781f280ebb27c0e05afc181628f489b68479",
+        "containerName": "wa-user-elyau",
+        "ip": "172.20.0.100",
+        "port": 3101,
+        "endpoint": "http://localhost:3101"
+      },
+      "terminatedAt": "2025-09-17T02:44:54.160Z"
+    },
+    {
+      "id": "174a7547-c4e2-4553-9fda-2d1462056de1",
+      "userId": "user_1758077196521",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T02:46:37.732Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T11:21:36.104Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/174a7547-c4e2-4553-9fda-2d1462056de1",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "23e7a1ec44cf39714d645146cebd2c22fc105fc9a500282593bc939c85809ac0",
+        "containerName": "wa-user-user_1758077196521",
+        "ip": "172.20.0.101",
+        "port": 3102,
+        "endpoint": "http://localhost:3102"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@zMjscI4n3YbQkzRQeGz6O8UKNEbZt3EB9EqmbK5JVOPyx98I3qQyz7dlgiryMAXcV0hxuTP5ElyAKejAB1wvxwZnIIYTNWP9JFg=,qN7ZJE1r6YhSgZRGjwLLVUwPzB2g6qYsJKBU1E+ytDo=,A2ON3v57RsmhePZ1NgmxhBHjjqzpHXc0XxWNZyK1/C4=,VcQx3PltKqTJZKy/pQRwbRIqcS+tylZtr2rBCXTMahE="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T11:21:36.177Z"
+    },
+    {
+      "id": "e00d0080-4597-4dca-ac24-e8c36b77a493",
+      "userId": "972502490440",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T03:11:19.519Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T03:13:27.058Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/e00d0080-4597-4dca-ac24-e8c36b77a493",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "6dc5ab0015f19ea0278749ca1d2bf8ef2e141dd3a09b06eb80bbe210e230aa30",
+        "containerName": "wa-user-972502490440",
+        "ip": "172.20.0.102",
+        "port": 3103,
+        "endpoint": "http://localhost:3103"
+      },
+      "terminatedAt": "2025-09-17T04:37:04.630Z"
+    },
+    {
+      "id": "0889a171-b6bd-4105-9611-5147a1e23327",
+      "userId": "test-new-user",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T07:06:20.206Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T07:08:12.170Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/0889a171-b6bd-4105-9611-5147a1e23327",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "cb9720c98e257e2736639e1c0e09ffbf4bce12a2444b57b1cd914b96223244ef",
+        "containerName": "wa-user-test-new-user",
+        "ip": "172.20.0.104",
+        "port": 3105,
+        "endpoint": "http://localhost:3105"
+      },
+      "terminatedAt": "2025-09-17T07:08:12.238Z"
+    },
+    {
+      "id": "2020e316-c60a-4919-9157-3d89d54f7e38",
+      "userId": "972586632113",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T10:03:54.194Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T10:21:07.133Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/2020e316-c60a-4919-9157-3d89d54f7e38",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "7feb5dfcb220e42279f1f6bd5b515a04e7dfa66117a814a82dbf35db2b214ce2",
+        "containerName": "wa-user-972586632113",
+        "ip": "172.20.0.106",
+        "port": 3107,
+        "endpoint": "http://localhost:3107"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@9U2uGJj9aCGlx/yP3vwXLFTf6UJRQcXalzoo/cwke/wHaTvP9sx1CazvNjfYijfMARkDKPBQQ/gD67fXejVjxvg4sR5IpZ8I++Q=,301i0+6u+pJs+Gm6JepWim3+42op9HdceTaMToev6k8=,XadH57JNOh2cOGyqAGZcLbTUe2V1EluS8t4T6/Syr1Q=,A2svOqBCfDkjQu57tz2YSPm1sNYBY4F+fODMB22nbTU="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T10:21:07.192Z"
+    },
+    {
+      "id": "58b43f35-879f-40f6-8709-d24e0267cfc6",
+      "userId": "972548498834",
+      "phoneNumber": "972548498834",
+      "createdAt": "2025-09-17T10:29:20.301Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T10:31:20.726Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/58b43f35-879f-40f6-8709-d24e0267cfc6",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "80a775bb5c6915382eb19f20d0c48816cc176975f94311d2ffd6b3738b09a658",
+        "containerName": "wa-user-972548498834",
+        "ip": "172.20.0.108",
+        "port": 3109,
+        "endpoint": "http://localhost:3109"
+      },
+      "terminatedAt": "2025-09-17T10:31:20.786Z"
+    },
+    {
+      "id": "8c960d4b-91f3-45d2-8513-be2161d1b763",
+      "userId": "972548498834",
+      "phoneNumber": "972548498834",
+      "createdAt": "2025-09-17T10:31:58.490Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T10:33:58.540Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/8c960d4b-91f3-45d2-8513-be2161d1b763",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "80a775bb5c6915382eb19f20d0c48816cc176975f94311d2ffd6b3738b09a658",
+        "containerName": "wa-user-972548498834",
+        "ip": "172.20.0.108",
+        "port": 3109,
+        "endpoint": "http://localhost:3109"
+      },
+      "terminatedAt": "2025-09-17T10:33:58.603Z"
+    },
+    {
+      "id": "b09cccf2-ba83-46d4-b76c-3791226d83fe",
+      "userId": "972548498834",
+      "phoneNumber": "972548498834",
+      "createdAt": "2025-09-17T10:35:01.373Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T11:20:45.253Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/b09cccf2-ba83-46d4-b76c-3791226d83fe",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "80a775bb5c6915382eb19f20d0c48816cc176975f94311d2ffd6b3738b09a658",
+        "containerName": "wa-user-972548498834",
+        "ip": "172.20.0.108",
+        "port": 3109,
+        "endpoint": "http://localhost:3109"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@ssTlsNUeDZEYwdkhhnZGsZlnv+x6V0tLs5dmKSrg5Egzev8B2tEZ9JjqFxaXR150hk0Cre4ccS5w+yZbOXU1n8zyF72oW1ps0nk=,ve3YMuH2vF7vZoUkEpv59OOJZGCg9KlnJXgUMH39XxM=,TfgGjGGZY18N2IJx6p9ei63luEmg8kU0BiVMoonZtGo=,xsrFlq3YojQplV9BO1s9OFDtcW5hjvExOw05ycqAmmE="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T11:20:45.318Z"
+    },
+    {
+      "id": "e2213242-a424-4a6a-8d8f-765ad1d14da3",
+      "userId": "972545583266",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T11:22:02.196Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T11:22:40.355Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/e2213242-a424-4a6a-8d8f-765ad1d14da3",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "da40e3c061737d24ab68d6d8a167768860d6ea513c56da903266c96e3d462d6b",
+        "containerName": "wa-user-972545583266",
+        "ip": "172.20.0.110",
+        "port": 3111,
+        "endpoint": "http://localhost:3111"
+      },
+      "terminatedAt": "2025-09-17T11:23:20.251Z"
+    },
+    {
+      "id": "d4bf09a6-fc48-4781-ac94-c0bcaaf20514",
+      "userId": "972545583266",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T11:23:39.266Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T13:19:18.028Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/d4bf09a6-fc48-4781-ac94-c0bcaaf20514",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "da40e3c06173",
+        "containerName": "wa-user-972545583266",
+        "ip": "172.20.0.111",
+        "port": 3111,
+        "endpoint": "http://localhost:3111"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@uEQcsSVr1mCkAvswCLJ9zPQM7xqu6XN47U26zRTzkkmWg2mTGhDHwfnUj13I67LL8Qk7vakoJMN0DTVd8kfoy8W4zN80J1Aui18=,xm/A9IomamOXOkBQVuOhyX5S62AqJdV6fEAGrW7GYyQ=,1EMQY6Irl9tKYHwDTYfjf5EOZpM7OedWurb1Cy+Lgkc=,486Tjh42IQ/ryQx86kMhxi5yFI6ynlGo6O3QFryNC0I="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T13:48:35.062Z"
+    },
+    {
+      "id": "56dba09f-9250-4688-88fe-f6fd3566c8c3",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T11:30:50.044Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T11:38:56.887Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/56dba09f-9250-4688-88fe-f6fd3566c8c3",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "bdf1e3e593cac199a583729a25dd60bed4d770b5305a23b3dd733a113e523a9e",
+        "containerName": "wa-user-972546268012",
+        "ip": "172.20.0.112",
+        "port": 3113,
+        "endpoint": "http://localhost:3113"
+      },
+      "terminatedAt": "2025-09-17T11:51:35.846Z"
+    },
+    {
+      "id": "fd808e56-309a-4be4-bf59-bcc2c4d6e2bd",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T11:51:56.828Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T12:21:28.515Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/fd808e56-309a-4be4-bf59-bcc2c4d6e2bd",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "bdf1e3e593ca",
+        "containerName": "wa-user-972546268012",
+        "ip": "172.20.0.113",
+        "port": 3113,
+        "endpoint": "http://localhost:3113"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@6qOXBcnZFh99Qdj2/V+gsZZopZS+lnBQ+Wr4voIU85nhJXKKG07pu1nxlJdWjPb65rEXeWmI1eZGAZRsQKYouNJUHBFzdqbz1C0=,73ZsMO10YTG1WfqgGZxoa0/YqvxpC+azASR+F6nAJBo=,IXPX1du5m9GBpy2H1ku7DJwoG1N/046A6TY1GwB03gY=,HClIfiqNS03eLjxrupljUhAAI5Grnu03cAvHPgHU0dg="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T13:03:51.023Z"
+    },
+    {
+      "id": "5b605025-e737-4bb3-ad4b-b518887f3847",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T13:04:02.054Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T13:07:36.579Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/5b605025-e737-4bb3-ad4b-b518887f3847",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "bdf1e3e593ca",
+        "containerName": "wa-user-972546268012",
+        "ip": "172.20.0.113",
+        "port": 3113,
+        "endpoint": "http://localhost:3113"
+      },
+      "authData": {
+        "type": "qr",
+        "qr": "2@6gNgs/eorSQ1tYY1CSqziyW2TDSc7kxDZV9n2u6Pep9L2NJ6JQlnI4mUE9GFVLFkAy2+JGfLs17Oi+gzsqghrZzaSrhwYOX8JcY=,M62ZabUfmgyDGSYrDtOw/WuE7aMy3gYvQawJSvb9VH4=,Wfuu1/MFHwjkOLBJljJVXHRIsI0tDYjyNrw/aghawzs=,YQIaP1zLiY0eqBTD7pVjI2zH3UULzem6ZkVavMLR64U="
+      },
+      "authMethod": "qr",
+      "terminatedAt": "2025-09-17T13:21:26.239Z"
+    },
+    {
+      "id": "87c469b8-bf3c-408d-87ab-08f4f21d6729",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T13:21:52.284Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T13:23:59.363Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/87c469b8-bf3c-408d-87ab-08f4f21d6729",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "bdf1e3e593ca",
+        "containerName": "wa-user-972546268012",
+        "ip": "172.20.0.113",
+        "port": 3113,
+        "endpoint": "http://localhost:3113"
+      },
+      "terminatedAt": "2025-09-17T13:48:37.273Z"
+    },
+    {
+      "id": "0755d84b-63bf-4e2f-96d1-b0e13ae4c62b",
+      "userId": "972546268012",
+      "phoneNumber": null,
+      "createdAt": "2025-09-17T13:48:49.913Z",
+      "status": "terminated",
+      "lastActivity": "2025-09-17T13:49:30.228Z",
+      "sessionPath": "/home/ubuntu/wa-auto-v2/src/core/sessions/0755d84b-63bf-4e2f-96d1-b0e13ae4c62b",
+      "proxyId": null,
+      "proxyInfo": null,
+      "containerInfo": {
+        "containerId": "bdf1e3e593ca",
+        "containerName": "wa-user-972546268012",
+        "ip": "172.20.0.113",
+        "port": 3113,
+        "endpoint": "http://localhost:3113"
+      },
+      "terminatedAt": "2025-09-17T14:02:17.120Z"
     }
   ],
   "users": [
@@ -502,8 +946,8 @@
     {
       "userId": "972546268012",
       "createdAt": "2025-09-16T05:08:05.491Z",
-      "lastActivity": "2025-09-16T15:01:26.744Z",
-      "totalSessions": 4,
+      "lastActivity": "2025-09-17T13:49:30.228Z",
+      "totalSessions": 10,
       "id": "mfm3du5v5p5zyhqhsb"
     },
     {
@@ -554,6 +998,118 @@
       "lastActivity": "2025-09-16T21:12:38.747Z",
       "totalSessions": 1,
       "id": "mfn1t6jip89jlbse19e"
+    },
+    {
+      "userId": "elyau",
+      "createdAt": "2025-09-17T00:21:49.376Z",
+      "lastActivity": "2025-09-17T02:43:36.281Z",
+      "totalSessions": 2,
+      "id": "mfn8ljnk0ethrdrt7afb"
+    },
+    {
+      "userId": "elyau_fixed",
+      "createdAt": "2025-09-17T00:39:05.468Z",
+      "lastActivity": "2025-09-17T00:40:57.327Z",
+      "totalSessions": 1,
+      "id": "mfn97r3wch1nhu9hfbh"
+    },
+    {
+      "userId": "elyau_main",
+      "createdAt": "2025-09-17T00:42:47.931Z",
+      "lastActivity": "2025-09-17T00:44:39.799Z",
+      "totalSessions": 1,
+      "id": "mfn9cirf246fp31k9xu"
+    },
+    {
+      "userId": "elyau_qr",
+      "createdAt": "2025-09-17T00:46:02.194Z",
+      "lastActivity": "2025-09-17T00:47:54.025Z",
+      "totalSessions": 1,
+      "id": "mfn9gonmj705ub1w2pk"
+    },
+    {
+      "userId": "15",
+      "createdAt": "2025-09-17T00:48:07.814Z",
+      "lastActivity": "2025-09-17T01:07:50.671Z",
+      "totalSessions": 1,
+      "id": "mfn9jdl25st4hbws188"
+    },
+    {
+      "userId": "user_1758074625682",
+      "createdAt": "2025-09-17T02:03:47.024Z",
+      "lastActivity": "2025-09-17T02:03:47.024Z",
+      "totalSessions": 0,
+      "id": "mfnc8o28gb10sgemajb"
+    },
+    {
+      "userId": "test-user-1",
+      "createdAt": "2025-09-17T02:09:38.114Z",
+      "lastActivity": "2025-09-17T02:11:11.711Z",
+      "totalSessions": 2,
+      "id": "mfncg6yqfxqdkl8jkuk"
+    },
+    {
+      "userId": "test-user-2",
+      "createdAt": "2025-09-17T02:16:34.978Z",
+      "lastActivity": "2025-09-17T02:16:34.978Z",
+      "totalSessions": 0,
+      "id": "mfncp4makqb2wg5qhdi"
+    },
+    {
+      "userId": "user_1758077196521",
+      "createdAt": "2025-09-17T02:46:37.526Z",
+      "lastActivity": "2025-09-17T11:21:36.104Z",
+      "totalSessions": 1,
+      "id": "mfndrrh2x6hc6uulb08"
+    },
+    {
+      "userId": "972502490440",
+      "createdAt": "2025-09-17T03:11:19.288Z",
+      "lastActivity": "2025-09-17T03:13:27.058Z",
+      "totalSessions": 1,
+      "id": "mfnenit4r357653n7q"
+    },
+    {
+      "userId": "test-user-debug",
+      "createdAt": "2025-09-17T07:01:37.017Z",
+      "lastActivity": "2025-09-17T07:01:37.017Z",
+      "totalSessions": 0,
+      "id": "mfnmvomxkdh169kyleq"
+    },
+    {
+      "userId": "test-new-user",
+      "createdAt": "2025-09-17T07:06:19.769Z",
+      "lastActivity": "2025-09-17T07:08:12.170Z",
+      "totalSessions": 1,
+      "id": "mfnn1qt5bc774e3bbq"
+    },
+    {
+      "userId": "972586632113",
+      "createdAt": "2025-09-17T10:03:53.767Z",
+      "lastActivity": "2025-09-17T10:21:07.134Z",
+      "totalSessions": 1,
+      "id": "mfnte3hjjqcpjcw63dd"
+    },
+    {
+      "userId": "972548498834",
+      "createdAt": "2025-09-17T10:29:19.869Z",
+      "lastActivity": "2025-09-17T11:20:45.254Z",
+      "totalSessions": 3,
+      "id": "mfnuat19tfh90fdhdql"
+    },
+    {
+      "userId": "972545583266",
+      "createdAt": "2025-09-17T11:22:01.976Z",
+      "lastActivity": "2025-09-17T13:19:18.028Z",
+      "totalSessions": 2,
+      "id": "mfnw6kxk7j45cboy51t"
+    },
+    {
+      "userId": "test-user",
+      "createdAt": "2025-09-17T13:13:23.607Z",
+      "lastActivity": "2025-09-17T13:13:23.607Z",
+      "totalSessions": 0,
+      "id": "mfo05sifmht8rijjfq"
     }
   ],
   "messages": [],
@@ -562,142 +1118,6 @@
     "createdAt": "2025-09-14T23:00:00.000Z",
     "lastMigration": "2025-09-14T23:00:00.000Z"
   },
-  "proxies": [
-    {
-      "host": "brd.superproxy.io",
-      "port": 33335,
-      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.7.22",
-      "password": "ub81zf14rl7k",
-      "protocol": "http",
-      "tags": [],
-      "status": "healthy",
-      "health": {
-        "lastChecked": null,
-        "responseTime": null,
-        "failureCount": 0,
-        "lastError": null
-      },
-      "usage": {
-        "totalAssignments": 0,
-        "currentAssignments": 0,
-        "lastUsed": null
-      },
-      "createdAt": "2025-09-16T21:17:52.973Z",
-      "updatedAt": "2025-09-16T21:18:42.012Z",
-      "id": "mfn20zwt5s27rglt94h",
-      "health.lastChecked": "2025-09-16T21:18:42.012Z",
-      "health.responseTime": 1027,
-      "health.failureCount": 0,
-      "health.lastError": null
-    },
-    {
-      "host": "brd.superproxy.io",
-      "port": 33335,
-      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-168.158.95.66",
-      "password": "ub81zf14rl7k",
-      "protocol": "http",
-      "tags": [],
-      "status": "healthy",
-      "health": {
-        "lastChecked": null,
-        "responseTime": null,
-        "failureCount": 0,
-        "lastError": null
-      },
-      "usage": {
-        "totalAssignments": 0,
-        "currentAssignments": 0,
-        "lastUsed": null
-      },
-      "createdAt": "2025-09-16T21:17:52.981Z",
-      "updatedAt": "2025-09-16T21:18:41.415Z",
-      "id": "mfn20zx1frg3jz55q8u",
-      "health.lastChecked": "2025-09-16T21:18:41.415Z",
-      "health.responseTime": 430,
-      "health.failureCount": 0,
-      "health.lastError": null
-    },
-    {
-      "host": "brd.superproxy.io",
-      "port": 33335,
-      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-178.171.84.60",
-      "password": "ub81zf14rl7k",
-      "protocol": "http",
-      "tags": [],
-      "status": "healthy",
-      "health": {
-        "lastChecked": null,
-        "responseTime": null,
-        "failureCount": 0,
-        "lastError": null
-      },
-      "usage": {
-        "totalAssignments": 0,
-        "currentAssignments": 0,
-        "lastUsed": null
-      },
-      "createdAt": "2025-09-16T21:17:52.982Z",
-      "updatedAt": "2025-09-16T21:18:43.825Z",
-      "id": "mfn20zx2sv5oa5jxiik",
-      "health.lastChecked": "2025-09-16T21:18:43.825Z",
-      "health.responseTime": 2839,
-      "health.failureCount": 0,
-      "health.lastError": null
-    },
-    {
-      "host": "brd.superproxy.io",
-      "port": 33335,
-      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-213.109.191.153",
-      "password": "ub81zf14rl7k",
-      "protocol": "http",
-      "tags": [],
-      "status": "healthy",
-      "health": {
-        "lastChecked": null,
-        "responseTime": null,
-        "failureCount": 0,
-        "lastError": null
-      },
-      "usage": {
-        "totalAssignments": 0,
-        "currentAssignments": 0,
-        "lastUsed": null
-      },
-      "createdAt": "2025-09-16T21:17:52.983Z",
-      "updatedAt": "2025-09-16T21:18:42.449Z",
-      "id": "mfn20zx3p5fipfm4ea",
-      "health.lastChecked": "2025-09-16T21:18:42.449Z",
-      "health.responseTime": 1464,
-      "health.failureCount": 0,
-      "health.lastError": null
-    },
-    {
-      "host": "brd.superproxy.io",
-      "port": 33335,
-      "username": "brd-customer-hl_9c654804-zone-isp_proxy1-ip-66.17.239.26",
-      "password": "ub81zf14rl7k",
-      "protocol": "http",
-      "tags": [],
-      "status": "healthy",
-      "health": {
-        "lastChecked": null,
-        "responseTime": null,
-        "failureCount": 0,
-        "lastError": null
-      },
-      "usage": {
-        "totalAssignments": 0,
-        "currentAssignments": 0,
-        "lastUsed": null
-      },
-      "createdAt": "2025-09-16T21:17:52.984Z",
-      "updatedAt": "2025-09-16T21:18:43.931Z",
-      "id": "mfn20zx4j4wr6xhmgpb",
-      "health.lastChecked": "2025-09-16T21:18:43.931Z",
-      "health.responseTime": 2946,
-      "health.failureCount": 0,
-      "health.lastError": null
-    }
-  ],
+  "proxies": [],
   "proxyAssignments": []
 }

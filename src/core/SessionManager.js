@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const JsonDB = require('../database/JsonDB');
 const WhatsAppStatusHandler = require('./StatusHandler');
 const ProxyManager = require('./ProxyManager');
+const ContainerManager = require('./ContainerManager');
 
 // ============================================
 // Multi-User Session Manager with Database Persistence
@@ -21,8 +22,14 @@ class SessionManager {
         // Initialize proxy manager
         this.proxyManager = new ProxyManager(this.db);
 
-        // Load existing sessions from database
-        this.loadSessionsFromDB();
+        // Initialize container manager for individual user containers
+        this.containerManager = new ContainerManager();
+        this.containerManager.startCleanupInterval();
+
+        // Load existing sessions from database (async operation)
+        this.loadSessionsFromDB().catch(error => {
+            console.error('[SessionManager] Error loading sessions from DB:', error);
+        });
 
         // Fix invalid proxy assignments on startup
         this.fixInvalidProxyAssignments();
@@ -31,12 +38,85 @@ class SessionManager {
         this.startSessionRestartScheduler();
     }
 
-    loadSessionsFromDB() {
+    async loadSessionsFromDB() {
         // Load all sessions from database into memory
         const dbSessions = this.sessionsCollection.find({ status: { $ne: 'terminated' } });
         dbSessions.forEach(session => {
             this.sessionMetadata.set(session.id, session);
         });
+
+        // Restore active sessions
+        await this.restoreActiveSessions();
+    }
+
+    async restoreActiveSessions() {
+        console.log('[SessionManager] Restoring active sessions from database...');
+
+        const activeSessions = this.sessionsCollection.find({
+            status: { $in: ['authenticated', 'pending'] }
+        });
+
+        console.log(`[SessionManager] Found ${activeSessions.length} active sessions to restore`);
+
+        for (const sessionData of activeSessions) {
+            try {
+                await this.restoreSession(sessionData);
+            } catch (error) {
+                console.error(`[SessionManager] Failed to restore session ${sessionData.id}:`, error.message);
+                // Mark session as failed
+                this.sessionsCollection.update(
+                    { id: sessionData.id },
+                    { $set: { status: 'failed', lastActivity: new Date() } }
+                );
+            }
+        }
+    }
+
+    async restoreSession(sessionData) {
+        const { id: sessionId, userId, phoneNumber } = sessionData;
+        const sessionPath = path.join(__dirname, 'sessions', sessionId);
+
+        console.log(`[SessionManager] Restoring session ${sessionId} for user ${userId}`);
+
+        // Verify session directory exists
+        if (!fs.existsSync(sessionPath)) {
+            throw new Error(`Session directory not found: ${sessionPath}`);
+        }
+
+        // Get or create container for user
+        let containerInfo = this.containerManager.getUserContainer(userId);
+        if (!containerInfo) {
+            console.log(`[SessionManager] Creating container for restored session ${sessionId}`);
+            containerInfo = await this.containerManager.createUserContainer(userId);
+        }
+
+        // Get proxy assignment
+        let proxyAssignment = null;
+        try {
+            proxyAssignment = this.proxyManager.getUserProxyAssignment(userId);
+            if (proxyAssignment) {
+                console.log(`[SessionManager] Using existing proxy for session ${sessionId}:`, proxyAssignment.proxy.host);
+            }
+        } catch (error) {
+            console.warn(`[SessionManager] No proxy found for restored session ${sessionId}:`, error.message);
+        }
+
+        // Import WhatsAppAutomation class
+        const { WhatsAppAutomation } = require('./WhatsAppAutomation');
+        const automation = new WhatsAppAutomation(sessionPath, sessionId, proxyAssignment?.proxy);
+
+        // Add to active sessions
+        this.sessions.set(sessionId, automation);
+
+        // Update last activity
+        this.sessionsCollection.update(
+            { id: sessionId },
+            { $set: { lastActivity: new Date() } }
+        );
+
+        console.log(`[SessionManager] Session ${sessionId} restored successfully`);
+
+        return automation;
     }
 
     async createSession(userId, phoneNumber = null) {
@@ -52,6 +132,21 @@ class SessionManager {
                 lastActivity: new Date(),
                 totalSessions: 0
             });
+        }
+
+        // Create individual container for this user if it doesn't exist
+        let containerInfo = this.containerManager.getUserContainer(userId);
+        if (!containerInfo) {
+            try {
+                console.log(`[${sessionId}] Creating individual container for user: ${userId}`);
+                containerInfo = await this.containerManager.createUserContainer(userId);
+                console.log(`[${sessionId}] Container created for user ${userId}:`, containerInfo.containerName);
+            } catch (error) {
+                console.error(`[${sessionId}] Failed to create container for user ${userId}:`, error);
+                throw new Error(`Failed to create container for user ${userId}: ${error.message}`);
+            }
+        } else {
+            console.log(`[${sessionId}] Using existing container for user ${userId}:`, containerInfo.containerName);
         }
 
         // Assign proxy to user (creates proxy assignment if not exists)
@@ -80,6 +175,33 @@ class SessionManager {
         const automation = new WhatsAppAutomation(sessionPath, sessionId, proxyAssignment?.proxy);
         this.sessions.set(sessionId, automation);
 
+        // Set up event listeners for new session
+        automation.on('authenticated', (data) => {
+            console.log(`[${sessionId}] Session authenticated - updating database status`);
+
+            // Update session status in database
+            this.sessionsCollection.update(
+                { id: sessionId },
+                {
+                    $set: {
+                        status: 'authenticated',
+                        lastActivity: new Date(),
+                        authenticatedAt: new Date()
+                    }
+                }
+            );
+
+            // Update metadata
+            const meta = this.sessionMetadata.get(sessionId);
+            if (meta) {
+                meta.status = 'authenticated';
+                meta.lastActivity = new Date();
+                meta.authenticatedAt = new Date();
+            }
+
+            console.log(`[${sessionId}] Session status updated to authenticated in database`);
+        });
+
         // Create session metadata
         const sessionData = {
             id: sessionId,
@@ -94,7 +216,14 @@ class SessionManager {
                 host: proxyAssignment.proxy.host,
                 port: proxyAssignment.proxy.port,
                 status: proxyAssignment.proxy.status
-            } : null
+            } : null,
+            containerInfo: {
+                containerId: containerInfo.containerId,
+                containerName: containerInfo.containerName,
+                ip: containerInfo.ip,
+                port: containerInfo.port,
+                endpoint: this.containerManager.getUserEndpoint(userId)
+            }
         };
 
         // Save to database
@@ -229,6 +358,56 @@ class SessionManager {
         }
     }
 
+    // Delete user and their individual container
+    async deleteUser(userId) {
+        console.log(`[SessionManager] Deleting user: ${userId}`);
+
+        try {
+            // First, remove all active sessions for this user
+            const userSessions = this.sessionsCollection.find({
+                userId,
+                status: { $ne: 'terminated' }
+            });
+
+            for (const session of userSessions) {
+                console.log(`[SessionManager] Removing session ${session.id} for user ${userId}`);
+                await this.removeSession(session.id);
+            }
+
+            // Destroy the user's individual container
+            const containerDestroyed = await this.containerManager.destroyUserContainer(userId);
+            if (containerDestroyed) {
+                console.log(`[SessionManager] Container destroyed for user: ${userId}`);
+            } else {
+                console.log(`[SessionManager] No container found for user: ${userId}`);
+            }
+
+            // Deactivate all proxy assignments for this user
+            try {
+                const assignments = this.proxyManager.assignmentsCollection.find({
+                    userId,
+                    status: 'active'
+                });
+
+                for (const assignment of assignments) {
+                    this.proxyManager.deactivateAssignment(assignment.id);
+                    console.log(`[SessionManager] Deactivated proxy assignment ${assignment.id} for user ${userId}`);
+                }
+            } catch (error) {
+                console.warn(`[SessionManager] Error deactivating proxy assignments for user ${userId}: ${error.message}`);
+            }
+
+            // Delete user from database
+            this.usersCollection.deleteMany({ userId });
+            console.log(`[SessionManager] User ${userId} deleted from database`);
+
+            return true;
+        } catch (error) {
+            console.error(`[SessionManager] Failed to delete user ${userId}:`, error);
+            throw error;
+        }
+    }
+
     async cleanupInactiveSessions(maxInactiveMinutes = 60) {
         const now = new Date();
         const toRemove = [];
@@ -348,7 +527,7 @@ class SessionManager {
             await automation.page.evaluate(() => {
                 if (window.WPPConfig) {
                     window.WPPConfig.sendStatusToDevice = true;
-                    window.WPPConfig.syncAllStatus = true;
+                    window.WPPConfig.syncAllStatus = false;
                 }
             });
 
@@ -394,6 +573,32 @@ class SessionManager {
                     if (meta) {
                         meta.authData = { type: 'code', code: data.code };
                     }
+                });
+
+                automation.on('authenticated', (data) => {
+                    console.log(`[${sessionId}] Session authenticated - updating database status`);
+
+                    // Update session status in database
+                    this.sessionsCollection.update(
+                        { id: sessionId },
+                        {
+                            $set: {
+                                status: 'authenticated',
+                                lastActivity: new Date(),
+                                authenticatedAt: new Date()
+                            }
+                        }
+                    );
+
+                    // Update metadata
+                    const meta = this.sessionMetadata.get(sessionId);
+                    if (meta) {
+                        meta.status = 'authenticated';
+                        meta.lastActivity = new Date();
+                        meta.authenticatedAt = new Date();
+                    }
+
+                    console.log(`[${sessionId}] Session status updated to authenticated in database`);
                 });
 
                 // Start authentication with stored method

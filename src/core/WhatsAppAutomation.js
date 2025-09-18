@@ -18,6 +18,14 @@ class WhatsAppAutomation {
         this.cdpSession = null;
         this.eventCallbacks = new Map(); // For API event subscriptions
         this.eventsSetup = false; // Track if events are already setup
+
+        // Memory leak prevention for large contact lists
+        this.memoryMonitorInterval = null;
+        this.contextRefreshInterval = null;
+        this.lastMemoryUsage = 0;
+        this.memoryRefreshThreshold = 70; // Refresh at 70% memory usage
+        this.sessionStartTime = Date.now();
+        this.maxSessionDuration = 6 * 60 * 60 * 1000; // 6 hours max session (for users with many contacts)
     }
 
     async initialize() {
@@ -41,7 +49,7 @@ class WhatsAppAutomation {
             console.log(`[${this.sessionId}] WARNING: Running in headless mode. WhatsApp may not work properly.`);
         }
 
-        // Prepare browser launch options
+        // Prepare browser launch options with HEAVY memory optimization for large contact lists
         const launchOptions = {
             headless: isHeadless || false, // Default to non-headless for WhatsApp compatibility
             viewport: { width: 1920, height: 1080 },
@@ -56,7 +64,52 @@ class WhatsAppAutomation {
                 '--window-size=1920,1080',
                 '--start-maximized',
                 '--default-encoding=utf-8',
-                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+
+                // CRITICAL: Massive memory optimizations for users with many contacts (20GB+ optimization)
+                '--max_old_space_size=8192',              // Increase Node.js heap to 8GB
+                '--memory-pressure-off',                  // Reduce memory pressure checks
+                '--max-heap-size=8192',                   // Increase V8 heap size to 8GB
+                '--js-flags=--max-old-space-size=8192',   // Extra V8 memory boost
+                '--disable-background-timer-throttling',  // Prevent tab throttling
+                '--disable-renderer-backgrounding',       // Keep renderer active
+                '--disable-backgrounding-occluded-windows', // Prevent background optimization
+                '--disable-features=TranslateUI',         // Disable translate feature
+                '--disable-ipc-flooding-protection',      // Prevent IPC throttling
+                '--disable-extensions',                   // Disable extensions
+                '--disable-component-extensions-with-background-pages',
+                '--disable-default-apps',                 // Disable default apps
+                '--disable-plugins',                      // Disable plugins
+                '--aggressive-cache-discard',             // More aggressive cache clearing
+
+                // EXTREME memory optimizations for contacts overload
+                '--disable-background-networking',        // Stop background requests
+                '--disable-sync',                         // Disable sync services
+                '--disable-domain-reliability',           // Stop crash reporting
+                '--disable-client-side-phishing-detection', // Save memory on security
+                '--disable-component-update',             // Stop auto-updates
+                '--disable-print-preview',                // Disable print features
+                '--disable-logging',                      // Reduce logging overhead
+                '--disable-speech-api',                   // Disable speech recognition
+                '--disable-file-system',                  // Disable filesystem API
+                '--disable-notifications',                // Disable notifications API
+                '--disable-permissions-api',              // Disable permissions
+                '--disable-presentation-api',             // Disable presentation API
+                '--disable-remote-fonts',                 // Don't download fonts
+                '--disable-shared-workers',               // Disable shared workers
+                '--disable-webgl',                        // Disable WebGL to save GPU memory
+                '--disable-webgl2',                       // Disable WebGL2
+                '--disable-canvas-aa',                    // Disable canvas anti-aliasing
+                '--disable-2d-canvas-clip-aa',           // Disable 2D canvas clipping
+                '--disable-gl-drawing-for-tests',        // Disable GL drawing
+                '--force-cpu-draw',                       // Force CPU rendering
+                '--memory-model=low',                     // Use low memory model
+                '--renderer-process-limit=1',             // Limit renderer processes
+                '--max-active-webgl-contexts=0',          // No WebGL contexts
+                '--disable-accelerated-video-decode',     // Disable video acceleration
+                '--disable-accelerated-mjpeg-decode',     // Disable MJPEG acceleration
+                '--disable-zero-browsers-open-for-tests', // Browser lifecycle optimization
+                '--purge-memory-button'                   // Enable memory purge button
             ]
         };
 
@@ -129,26 +182,263 @@ class WhatsAppAutomation {
                 // Wait a bit for WA-JS to initialize
                 await new Promise(resolve => setTimeout(resolve, 3000));
 
-                // Remove WhatsApp sidebar to make it less heavy
+                // CRITICAL FIX: Ensure WA-JS status module is properly loaded
+                await page.evaluate(() => {
+                    return new Promise((resolve) => {
+                        const checkStatusModule = () => {
+                            console.log('🔍 Checking WA-JS status module availability...');
+
+                            // Check if WPP exists and is ready
+                            if (typeof window.WPP === 'undefined') {
+                                console.log('❌ WPP not available yet');
+                                setTimeout(checkStatusModule, 1000);
+                                return;
+                            }
+
+                            // Wait for isFullReady
+                            if (!window.WPP.isFullReady) {
+                                console.log('⏳ WPP not fully ready yet');
+                                setTimeout(checkStatusModule, 1000);
+                                return;
+                            }
+
+                            // Force load the status module if not available
+                            if (!window.WPP.status || typeof window.WPP.status.sendTextStatus !== 'function') {
+                                console.log('🔧 Status module not loaded, attempting to force load...');
+
+                                try {
+                                    // Try to force load the status module using webpack require
+                                    if (window.WPP.webpack && typeof window.WPP.webpack.require === 'function') {
+                                        console.log('📦 Using webpack to load status module...');
+
+                                        // Search for status-related modules
+                                        const modules = window.WPP.webpack.findModule ?
+                                            window.WPP.webpack.findModule('sendTextStatus') : null;
+
+                                        if (modules) {
+                                            console.log('✅ Found status module via webpack');
+                                        }
+                                    }
+
+                                    // Alternative: Try to access status functions through Store
+                                    if (window.Store && window.Store.StatusV3) {
+                                        console.log('🔄 Using Store.StatusV3 as fallback');
+
+                                        // Create a wrapper for missing WPP.status functions
+                                        if (!window.WPP.status) {
+                                            window.WPP.status = {};
+                                        }
+
+                                        if (!window.WPP.status.sendTextStatus && window.Store.StatusV3.sendMessage) {
+                                            window.WPP.status.sendTextStatus = async (content, options = {}) => {
+                                                console.log('📤 Using Store.StatusV3 wrapper for sendTextStatus');
+                                                const statusMsg = {
+                                                    type: 'text',
+                                                    body: content,
+                                                    isViewOnce: false,
+                                                    ...options
+                                                };
+                                                return await window.Store.StatusV3.sendMessage(statusMsg);
+                                            };
+                                        }
+                                    }
+
+                                    // Check if we now have status functions
+                                    if (window.WPP.status && typeof window.WPP.status.sendTextStatus === 'function') {
+                                        console.log('✅ Status module successfully loaded/wrapped');
+                                        resolve();
+                                        return;
+                                    }
+                                } catch (error) {
+                                    console.log('❌ Error loading status module:', error.message);
+                                }
+
+                                // If still not available, try again in a moment
+                                setTimeout(checkStatusModule, 2000);
+                                return;
+                            }
+
+                            console.log('✅ WA-JS status module is ready');
+                            resolve();
+                        };
+
+                        checkStatusModule();
+                    });
+                });
+
+                console.log(`[${this.sessionId}] WA-JS status module verification complete`);
+
+                // EXTREME memory optimization for users with many contacts (MEMORY LEAK PREVENTION)
                 try {
                     await page.evaluate(() => {
-                        // Wait for sidebar to load and then remove it
-                        const waitForSidebar = setInterval(() => {
-                            const sideElement = document.querySelector('#side');
-                            if (sideElement && sideElement.parentElement) {
-                                console.log('Removing WhatsApp sidebar to reduce resource usage');
-                                sideElement.parentElement.remove();
-                                clearInterval(waitForSidebar);
+                        console.log('🚀 Applying EXTREME memory optimizations for large contact lists...');
+
+                        // Memory monitoring and optimization function
+                        const optimizeForLargeContactLists = () => {
+                            try {
+                                console.log('🔧 Running contact list memory optimization...');
+
+                                // 1. CRITICAL: Remove the entire sidebar DOM tree (huge memory saver)
+                                const sideElement = document.querySelector('#side');
+                                if (sideElement) {
+                                    console.log('📱 REMOVING entire WhatsApp sidebar to save memory');
+                                    sideElement.remove(); // More aggressive than parent remove
+                                }
+
+                                // 2. Remove search/filter elements that cache contacts
+                                const searchElements = document.querySelectorAll('[data-testid*="search"], [data-testid*="filter"], input[type="search"]');
+                                searchElements.forEach(el => el.remove());
+
+                                // 3. AGGRESSIVE: Remove chat list entirely if too many chats
+                                const chatListContainer = document.querySelector('[data-testid="chat-list"]');
+                                if (chatListContainer) {
+                                    const chatItems = chatListContainer.querySelectorAll('[data-testid^="cell-frame-container"]');
+                                    console.log(`📋 Found ${chatItems.length} chats`);
+
+                                    // If more than 50 chats, remove the entire list to save MASSIVE memory
+                                    if (chatItems.length > 50) {
+                                        console.log('⚠️ TOO MANY CHATS! Removing entire chat list to prevent crash');
+                                        chatListContainer.remove();
+                                    } else {
+                                        // For smaller lists, just hide excess
+                                        for (let i = 10; i < chatItems.length; i++) {
+                                            if (chatItems[i]) {
+                                                chatItems[i].remove(); // Remove from DOM completely
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 4. Remove contact avatars and images (memory hogs)
+                                const avatars = document.querySelectorAll('img[data-testid*="avatar"], img[src*="blob:"], canvas');
+                                console.log(`🖼️ Removing ${avatars.length} images/avatars to save memory`);
+                                avatars.forEach(img => img.remove());
+
+                                // 5. Clear message history containers
+                                const messageContainers = document.querySelectorAll('[data-testid="conversation-panel-messages"]');
+                                messageContainers.forEach(container => {
+                                    container.innerHTML = ''; // Clear message history
+                                });
+
+                                // 6. EXTREME: Disable all animations and transitions globally
+                                const style = document.createElement('style');
+                                style.textContent = `
+                                    * {
+                                        animation: none !important;
+                                        transition: none !important;
+                                        transform: none !important;
+                                        filter: none !important;
+                                        box-shadow: none !important;
+                                        background-image: none !important;
+                                    }
+
+                                    /* Hide memory-heavy elements */
+                                    [data-testid="conversation-panel-messages"] { display: none !important; }
+                                    [data-testid="conversation-panel-wrapper"] { display: none !important; }
+                                    [data-testid="conversation-panel"] { display: none !important; }
+                                    [class*="message"] { display: none !important; }
+
+                                    /* Keep only Status functionality visible */
+                                    [data-testid*="status"] { display: block !important; }
+                                    [aria-label*="Status"], [aria-label*="Updates"] { display: block !important; }
+                                `;
+                                document.head.appendChild(style);
+
+                                // 7. Force garbage collection
+                                if (window.gc) {
+                                    window.gc();
+                                    console.log('🗑️ Forced garbage collection');
+                                }
+
+                                // 8. Clear all caches aggressively
+                                if ('caches' in window) {
+                                    caches.keys().then(names => {
+                                        names.forEach(name => {
+                                            caches.delete(name);
+                                        });
+                                        console.log(`🧹 Cleared ${names.length} cache stores`);
+                                    }).catch(() => {});
+                                }
+
+                                // 9. Clear local storage of WhatsApp data
+                                try {
+                                    // Clear only non-essential items
+                                    const keysToKeep = ['WAPersistentSession', 'WAToken', 'WAUserAgent'];
+                                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                                        const key = localStorage.key(i);
+                                        if (key && !keysToKeep.some(keepKey => key.includes(keepKey))) {
+                                            localStorage.removeItem(key);
+                                        }
+                                    }
+                                    console.log('🧽 Cleaned up localStorage');
+                                } catch (e) {}
+
+                                // 10. Disconnect unused observers
+                                if (window.MutationObserver) {
+                                    const observers = [];
+                                    observers.forEach(obs => obs.disconnect());
+                                }
+
+                                console.log('✅ Memory optimization completed');
+
+                                // Return memory stats if available
+                                if (performance && performance.memory) {
+                                    console.log(`📊 Memory usage: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)}MB`);
+                                    console.log(`📊 Memory limit: ${Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024)}MB`);
+                                }
+
+                            } catch (optError) {
+                                console.error('⚠️ Error in memory optimization:', optError.message);
+                            }
+                        };
+
+                        // 11. Memory pressure monitoring and auto-cleanup
+                        const monitorMemoryPressure = () => {
+                            if (performance && performance.memory) {
+                                const used = performance.memory.usedJSHeapSize;
+                                const limit = performance.memory.jsHeapSizeLimit;
+                                const usage = (used / limit) * 100;
+
+                                console.log(`🎯 Memory usage: ${usage.toFixed(1)}%`);
+
+                                // If memory usage is above 70%, run aggressive cleanup
+                                if (usage > 70) {
+                                    console.log('⚠️ HIGH MEMORY USAGE! Running emergency cleanup...');
+                                    optimizeForLargeContactLists();
+
+                                    // Emergency measures
+                                    if (usage > 85) {
+                                        console.log('🚨 CRITICAL MEMORY! Removing everything except status...');
+                                        document.body.innerHTML = '<div>WhatsApp Status Only Mode</div>';
+                                    }
+                                }
+                            }
+                        };
+
+                        // 12. Wait for WhatsApp to load then optimize immediately
+                        const waitForWhatsApp = setInterval(() => {
+                            if (document.querySelector('#app') || document.querySelector('[data-testid="app"]')) {
+                                console.log('📱 WhatsApp loaded, applying optimizations...');
+                                optimizeForLargeContactLists();
+                                clearInterval(waitForWhatsApp);
                             }
                         }, 1000);
 
-                        // Stop trying after 30 seconds if sidebar not found
+                        // Stop trying after 30 seconds
                         setTimeout(() => {
-                            clearInterval(waitForSidebar);
+                            clearInterval(waitForWhatsApp);
                         }, 30000);
+
+                        // Run optimization every 2 minutes for continued stability
+                        setInterval(optimizeForLargeContactLists, 120000);
+
+                        // Memory monitoring every 30 seconds
+                        setInterval(monitorMemoryPressure, 30000);
+
+                        console.log('🚀 EXTREME memory optimization system activated!');
                     });
-                } catch (sidebarError) {
-                    console.log(`[${this.sessionId}] Could not remove sidebar:`, sidebarError.message);
+                } catch (optimizationError) {
+                    console.log(`[${this.sessionId}] ⚠️ Could not apply EXTREME optimizations:`, optimizationError.message);
                 }
 
             } catch (error) {
@@ -194,6 +484,234 @@ class WhatsAppAutomation {
         if (!fs.existsSync(this.sessionPath)) {
             fs.mkdirSync(this.sessionPath, { recursive: true });
         }
+    }
+
+    // Memory monitoring and context refresh for users with many contacts
+    async startMemoryMonitoring() {
+        console.log(`[${this.sessionId}] 🎯 Starting memory monitoring for large contact lists...`);
+
+        // Clear any existing intervals
+        if (this.memoryMonitorInterval) clearInterval(this.memoryMonitorInterval);
+        if (this.contextRefreshInterval) clearInterval(this.contextRefreshInterval);
+
+        // Monitor memory every 30 seconds
+        this.memoryMonitorInterval = setInterval(async () => {
+            try {
+                if (!this.page || this.page.isClosed()) return;
+
+                const memoryInfo = await this.page.evaluate(() => {
+                    if (performance && performance.memory) {
+                        return {
+                            used: performance.memory.usedJSHeapSize,
+                            total: performance.memory.totalJSHeapSize,
+                            limit: performance.memory.jsHeapSizeLimit,
+                            usagePercent: (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100
+                        };
+                    }
+                    return null;
+                });
+
+                if (memoryInfo) {
+                    console.log(`[${this.sessionId}] 📊 Memory: ${memoryInfo.usagePercent.toFixed(1)}% (${Math.round(memoryInfo.used / 1024 / 1024)}MB)`);
+
+                    // If memory usage is too high, trigger emergency cleanup
+                    if (memoryInfo.usagePercent > this.memoryRefreshThreshold) {
+                        console.log(`[${this.sessionId}] ⚠️ HIGH MEMORY USAGE! Triggering emergency cleanup...`);
+                        await this.emergencyMemoryCleanup();
+
+                        // If still too high after cleanup, refresh context
+                        if (memoryInfo.usagePercent > 85) {
+                            console.log(`[${this.sessionId}] 🚨 CRITICAL MEMORY! Refreshing browser context...`);
+                            await this.refreshBrowserContext();
+                        }
+                    }
+
+                    this.lastMemoryUsage = memoryInfo.usagePercent;
+                }
+
+                // Check session duration - refresh after max time to prevent memory buildup
+                const sessionDuration = Date.now() - this.sessionStartTime;
+                if (sessionDuration > this.maxSessionDuration) {
+                    console.log(`[${this.sessionId}] ⏰ Session duration exceeded ${this.maxSessionDuration / (60 * 60 * 1000)}h, refreshing context...`);
+                    await this.refreshBrowserContext();
+                }
+
+            } catch (error) {
+                console.log(`[${this.sessionId}] Error in memory monitoring:`, error.message);
+            }
+        }, 30000);
+
+        // Periodic context refresh every 2 hours for users with many contacts
+        this.contextRefreshInterval = setInterval(async () => {
+            try {
+                console.log(`[${this.sessionId}] 🔄 Periodic context refresh for memory leak prevention...`);
+                await this.refreshBrowserContext();
+            } catch (error) {
+                console.log(`[${this.sessionId}] Error in periodic refresh:`, error.message);
+            }
+        }, 2 * 60 * 60 * 1000); // Every 2 hours
+    }
+
+    async emergencyMemoryCleanup() {
+        try {
+            console.log(`[${this.sessionId}] 🧹 Running emergency memory cleanup...`);
+
+            if (!this.page || this.page.isClosed()) return;
+
+            await this.page.evaluate(() => {
+                // Force garbage collection
+                if (window.gc) {
+                    window.gc();
+                    console.log('🗑️ Forced garbage collection');
+                }
+
+                // Clear all caches
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    }).catch(() => {});
+                }
+
+                // Remove all image elements to free memory
+                const images = document.querySelectorAll('img, canvas, video');
+                images.forEach(img => img.remove());
+
+                // Clear any message containers
+                const containers = document.querySelectorAll('[data-testid*="message"], [class*="message"]');
+                containers.forEach(container => container.innerHTML = '');
+
+                console.log('💨 Emergency cleanup completed');
+            });
+
+        } catch (error) {
+            console.log(`[${this.sessionId}] Error in emergency cleanup:`, error.message);
+        }
+    }
+
+    async refreshBrowserContext() {
+        try {
+            console.log(`[${this.sessionId}] 🔄 Refreshing browser context to prevent memory leaks...`);
+
+            // Check if we're authenticated before refresh
+            const isAuth = await this.isAuthenticated().catch(() => false);
+
+            if (!isAuth) {
+                console.log(`[${this.sessionId}] Not authenticated, skipping context refresh`);
+                return false;
+            }
+
+            // Save current state
+            const wasAuthenticated = isAuth;
+
+            // Create new browser context while keeping the old one
+            const oldBrowser = this.browser;
+            const oldPage = this.page;
+
+            try {
+                // Create new browser context with same settings
+                const { browser: newBrowser, page: newPage } = await this.createBrowserWithWAJS();
+
+                // Wait for WhatsApp to load in new context
+                await newPage.goto('https://web.whatsapp.com', {
+                    waitUntil: 'domcontentloaded',
+                    timeout: 60000
+                });
+
+                // Wait for authentication to restore (should happen automatically with persistent context)
+                let authRestored = false;
+                for (let i = 0; i < 30; i++) { // Wait up to 30 seconds
+                    const isNewAuth = await this.checkAuthenticationStatus(newPage);
+                    if (isNewAuth) {
+                        authRestored = true;
+                        break;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                if (authRestored) {
+                    // Switch to new context
+                    this.browser = newBrowser;
+                    this.page = newPage;
+
+                    // Setup CDP session
+                    this.cdpSession = await this.page.context().newCDPSession(this.page);
+                    await this.cdpSession.send('Page.setBypassCSP', { enabled: true });
+
+                    // Recreate status handler
+                    this.statusHandler = new WhatsAppStatusHandler(this.page, this);
+
+                    // Reset session timer
+                    this.sessionStartTime = Date.now();
+
+                    console.log(`[${this.sessionId}] ✅ Browser context refreshed successfully`);
+
+                    // Close old browser context
+                    if (oldBrowser) {
+                        try {
+                            await oldBrowser.close();
+                        } catch (e) {
+                            console.log(`[${this.sessionId}] Note: Could not close old browser:`, e.message);
+                        }
+                    }
+
+                    return true;
+                } else {
+                    console.log(`[${this.sessionId}] ⚠️ Authentication not restored in new context, keeping old one`);
+                    await newBrowser.close();
+                    return false;
+                }
+
+            } catch (refreshError) {
+                console.log(`[${this.sessionId}] Error creating new context:`, refreshError.message);
+
+                // Clean up new browser if creation failed
+                if (newBrowser) {
+                    try {
+                        await newBrowser.close();
+                    } catch (e) {}
+                }
+
+                return false;
+            }
+
+        } catch (error) {
+            console.log(`[${this.sessionId}] Error in context refresh:`, error.message);
+            return false;
+        }
+    }
+
+    async checkAuthenticationStatus(page = null) {
+        try {
+            const targetPage = page || this.page;
+            if (!targetPage || targetPage.isClosed()) return false;
+
+            const isAuthenticated = await targetPage.evaluate(() => {
+                if (window.WPP && window.WPP.conn) {
+                    try {
+                        return window.WPP.conn.isAuthenticated();
+                    } catch (e) {
+                        return false;
+                    }
+                }
+                return false;
+            }).catch(() => false);
+
+            return isAuthenticated;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    stopMemoryMonitoring() {
+        if (this.memoryMonitorInterval) {
+            clearInterval(this.memoryMonitorInterval);
+            this.memoryMonitorInterval = null;
+        }
+        if (this.contextRefreshInterval) {
+            clearInterval(this.contextRefreshInterval);
+            this.contextRefreshInterval = null;
+        }
+        console.log(`[${this.sessionId}] 🛑 Memory monitoring stopped`);
     }
 
     // Event subscription for API
@@ -723,7 +1241,7 @@ class WhatsAppAutomation {
                 await this.page.evaluate(() => {
                     if (window.WPPConfig) {
                         window.WPPConfig.sendStatusToDevice = true;
-                        window.WPPConfig.syncAllStatus = true;
+                        window.WPPConfig.syncAllStatus = false;
                         console.log('WPPConfig.sendStatusToDevice set to true');
                         console.log('WPPConfig.removeStatusMessage set to true');
                     }
@@ -740,6 +1258,9 @@ class WhatsAppAutomation {
                 console.log(`[${this.sessionId}] WhatsApp automation ready!`);
 
                 this.statusHandler = new WhatsAppStatusHandler(this.page, this);
+
+                // START MEMORY MONITORING FOR LARGE CONTACT LISTS
+                await this.startMemoryMonitoring();
 
                 return {
                     success: true,
@@ -762,6 +1283,9 @@ class WhatsAppAutomation {
     }
 
     async cleanup(forceClose = false) {
+        // Stop memory monitoring for large contact lists
+        this.stopMemoryMonitoring();
+
         // Detach CDP session
         if (this.cdpSession) {
             await this.cdpSession.detach();

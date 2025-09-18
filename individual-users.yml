@@ -1,0 +1,43 @@
+version: '3.8'
+
+# Configuration for individual IP per user
+# Each user gets their own container with unique IP
+
+services:
+  # Load Balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-individual.conf:/etc/nginx/nginx.conf
+    networks:
+      wa_network:
+        ipv4_address: 172.20.0.5
+    restart: unless-stopped
+
+  # Management API - handles user assignment to containers
+  wa-manager:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - ROLE=manager
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      wa_network:
+        ipv4_address: 172.20.0.10
+    restart: unless-stopped
+
+networks:
+  wa_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1

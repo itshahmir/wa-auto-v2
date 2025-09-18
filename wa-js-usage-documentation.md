@@ -60,7 +60,7 @@ This WhatsApp automation project uses WA-JS (WPPConnect WhatsApp JavaScript libr
 await page.evaluate(() => {
     window.WPPConfig = {
         sendStatusToDevice: true,
-        syncAllStatus: true,
+        syncAllStatus: false,
     };
 });
 
@@ -278,7 +278,7 @@ window.WPP.on('conn.authenticated', () => {
 ```javascript
 window.WPPConfig = {
     sendStatusToDevice: true,  // Enable status sync across devices
-    syncAllStatus: true,       // Sync all status messages
+    syncAllStatus: false,      // Disable syncing all status messages for performance
 };
 ```
 
@@ -290,7 +290,7 @@ window.WPPConfig = {
 await page.evaluate(() => {
     if (window.WPPConfig) {
         window.WPPConfig.sendStatusToDevice = true;
-        window.WPPConfig.syncAllStatus = true;
+        window.WPPConfig.syncAllStatus = false;
     }
 });
 ```

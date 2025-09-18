@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Status Automation Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .session-creator {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #25D366;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        }
+
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .session-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .session-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border-color: #25D366;
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .session-id {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-authenticated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .qr-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code {
+            max-width: 200px;
+            max-height: 200px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            margin: 0 auto;
+        }
+
+        .status-form {
+            margin-top: 20px;
+        }
+
+        .status-form textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 15px;
+        }
+
+        .status-form textarea:focus {
+            outline: none;
+            border-color: #25D366;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #25D366;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #b8daff;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #25D366;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 15px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover .file-upload-label {
+            border-color: #25D366;
+            background: #f0f8f0;
+        }
+
+        @media (max-width: 768px) {
+            .sessions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 WhatsApp Status Automation</h1>
+            <p>Optimized Browser-Based Status Operations</p>
+        </div>
+
+        <div class="main-content">
+            <!-- System Stats -->
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="activeSessions">0</div>
+                    <div class="stat-label">Active Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="authenticatedSessions">0</div>
+                    <div class="stat-label">Authenticated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="systemUptime">0h</div>
+                    <div class="stat-label">System Uptime</div>
+                </div>
+            </div>
+
+            <!-- Create New Session -->
+            <div class="session-creator">
+                <h3>🚀 Create New Status Session</h3>
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" placeholder="Enter unique user ID (e.g., user123)" required>
+                </div>
+                <button class="btn" onclick="createSession()">
+                    <span>📱</span> Create Status Browser
+                </button>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
+            <!-- Sessions List -->
+            <div id="sessionsContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading sessions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect API base URL
+        const API_BASE = window.location.hostname === 'localhost'
+            ? ''
+            : (window.location.protocol + '//' + window.location.host);
+        let refreshInterval;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSessions();
+            loadStats();
+
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(() => {
+                loadSessions();
+                loadStats();
+            }, 10000);
+        });
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Load system stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                document.getElementById('activeSessions').textContent = data.activeBrowsers || 0;
+                document.getElementById('systemUptime').textContent =
+                    Math.floor((data.uptime || 0) / 3600) + 'h';
+
+                // Count authenticated sessions
+                const sessionsResponse = await fetch(`${API_BASE}/sessions`);
+                const sessionsData = await sessionsResponse.json();
+                const authenticatedCount = sessionsData.sessions?.filter(s =>
+                    s.isStatusReady || s.status === 'authenticated'
+                ).length || 0;
+
+                document.getElementById('authenticatedSessions').textContent = authenticatedCount;
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load and display sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch(`${API_BASE}/sessions`);
+                const data = await response.json();
+
+                const container = document.getElementById('sessionsContainer');
+
+                if (!data.sessions || data.sessions.length === 0) {
+                    container.innerHTML = `
+                        <div class="loading">
+                            <p>No active sessions. Create a new session to get started!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <h3>📱 Active Status Sessions</h3>
+                    <div class="sessions-grid">
+                        ${data.sessions.map(session => createSessionCard(session)).join('')}
+                    </div>
+                `;
+
+                // Load QR codes for sessions that need authentication
+                data.sessions.forEach(session => {
+                    if (session.needsQR || !session.isAuthenticated) {
+                        loadQRCode(session.userId);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showAlert('Error loading sessions', 'error');
+            }
+        }
+
+        // Create session card HTML
+        function createSessionCard(session) {
+            const statusClass = session.isAuthenticated && session.isStatusReady ? 'authenticated' : 'pending';
+            const statusText = session.isAuthenticated ? (session.isStatusReady ? 'Ready' : 'Loading...') : 'Needs Auth';
+
+            return `
+                <div class="session-card" id="session-${session.userId}">
+                    <div class="session-header">
+                        <div class="session-id">${session.userId}</div>
+                        <span class="status-badge status-${statusClass}">${statusText}</span>
+                    </div>
+
+                    ${session.needsQR || !session.isAuthenticated ? `
+                        <div class="qr-section">
+                            <p>Scan QR code to authenticate:</p>
+                            <div id="qr-${session.userId}">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="status-form">
+                            <textarea id="statusText-${session.userId}"
+                                placeholder="Enter your status message..."></textarea>
+                            <button class="btn" onclick="sendTextStatus('${session.userId}')">
+                                <span>📝</span> Send Status
+                            </button>
+
+                            <div class="file-upload" style="margin-top: 15px;">
+                                <input type="file" id="mediaFile-${session.userId}"
+                                    accept="image/*,video/*" onchange="sendMediaStatus('${session.userId}')">
+                                <label for="mediaFile-${session.userId}" class="file-upload-label">
+                                    📎 Upload Image/Video Status
+                                </label>
+                            </div>
+                        </div>
+                    `}
+
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-danger" onclick="closeSession('${session.userId}')">
+                            <span>🗑️</span> Close Session
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create new session
+        async function createSession() {
+            const userId = document.getElementById('userId').value.trim();
+
+            if (!userId) {
+                showAlert('Please enter a User ID', 'error');
+                return;
+            }
+
+            try {
+                showAlert('Creating status browser session...', 'info');
+
+                const response = await fetch(`${API_BASE}/status-browser/create/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(`Session created for ${userId}`, 'success');
+                    document.getElementById('userId').value = '';
+                    loadSessions();
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error creating session:', error);
+                showAlert('Error creating session', 'error');
+            }
+        }
+
+        // Load QR code for session
+        async function loadQRCode(userId) {
+            try {
+                const response = await fetch(`${API_BASE}/status-browser/${userId}/qr`);
+                const data = await response.json();
+
+                const qrContainer = document.getElementById(`qr-${userId}`);
+                if (!qrContainer) return;
+
+                if (data.success && data.qr) {
+                    qrContainer.innerHTML = `
+                        <img src="data:image/png;base64,${data.qr}"
+                             class="qr-code" alt="QR Code">
+                        <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                            Scan with WhatsApp mobile app
+                        </p>
+                    `;
+                } else {
+                    qrContainer.innerHTML = `
+                        <p style="color: #666;">QR code not available</p>
+                        <button class="btn" onclick="loadQRCode('${userId}')" style="margin-top: 10px;">
+                            🔄 Refresh QR
+                        </button>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+            }
+        }
+
+        // Send text status
+        async function sendTextStatus(userId) {
+            const textArea = document.getElementById(`statusText-${userId}`);
+            const content = textArea.value.trim();
+
+            if (!content) {
+                showAlert('Please enter status text', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/status-browser/${userId}/status/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        options: {}
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Status sent successfully!', 'success');
+                    textArea.value = '';
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error sending status:', error);
+                showAlert('Error sending status', 'error');
+            }
+        }
+
+        // Send media status
+        async function sendMediaStatus(userId) {
+            const fileInput = document.getElementById(`mediaFile-${userId}`);
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            try {
+                const formData = new FormData();
+                formData.append(file.type.startsWith('video/') ? 'video' : 'image', file);
+                formData.append('caption', '');
+
+                const endpoint = file.type.startsWith('video/') ? 'video' : 'image';
+                const response = await fetch(`${API_BASE}/status-browser/${userId}/status/${endpoint}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Media status sent successfully!', 'success');
+                    fileInput.value = '';
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error sending media status:', error);
+                showAlert('Error sending media status', 'error');
+            }
+        }
+
+        // Close session
+        async function closeSession(userId) {
+            if (!confirm(`Are you sure you want to close session for ${userId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/status-browser/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(`Session closed for ${userId}`, 'success');
+                    loadSessions();
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error closing session:', error);
+                showAlert('Error closing session', 'error');
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>
